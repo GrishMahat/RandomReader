@@ -1,11 +1,25 @@
 import { defineConfig } from 'vite';
 import { crx } from '@crxjs/vite-plugin';
-import manifest from './src/manifest.json' with { type: 'json' };
+import chromeManifest from './src/manifest.json' with { type: 'json' };
+
+const isFirefox = process.env.BROWSER === 'firefox';
+
+const manifest = isFirefox
+  ? {
+      ...chromeManifest,
+      browser_specific_settings: {
+        gecko: {
+          id: 'random-reader@grishmahat.dev',
+          strict_min_version: '121.0',
+        },
+      },
+    }
+  : chromeManifest;
 
 export default defineConfig({
   plugins: [crx({ manifest })],
   build: {
-    outDir: 'dist',
+    outDir: isFirefox ? 'dist-firefox' : 'dist',
     emptyOutDir: true,
   },
 });

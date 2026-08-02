@@ -45,6 +45,14 @@ pnpm build
 
 The built extension lands in `dist/`.
 
+### Build for Firefox
+
+```bash
+pnpm build:firefox
+```
+
+Outputs to `dist-firefox/` with a `browser_specific_settings.gecko` manifest. Zip the folder contents and upload to [Firefox Add-ons](https://addons.mozilla.org/) (free, no developer fee).
+
 ### Load in Chrome (unpacked)
 
 1. Open `chrome://extensions`
