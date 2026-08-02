@@ -1,0 +1,22 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Flat background, single color -->
+  <rect x="0" y="0" width="512" height="512" rx="110" fill="#1E293B"/>
+
+  <!-- Simple page / bookmark shape -->
+  <path d="M 176 130
+           L 336 130
+           L 336 382
+           L 256 340
+           L 176 382
+           Z"
+        fill="#FFFFFF"/>
+
+  <!-- Three simple text lines on the page -->
+  <line x1="204" y1="180" x2="308" y2="180" stroke="#1E293B" stroke-width="10" stroke-linecap="round"/>
+  <line x1="204" y1="212" x2="308" y2="212" stroke="#1E293B" stroke-width="10" stroke-linecap="round"/>
+  <line x1="204" y1="244" x2="270" y2="244" stroke="#1E293B" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Single die pip, flat orange circle, tucked in the corner -->
+  <circle cx="360" cy="150" r="46" fill="#F97316"/>
+  <circle cx="360" cy="150" r="9" fill="#FFFFFF"/>
+</svg>
