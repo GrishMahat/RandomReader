@@ -15,7 +15,7 @@ A clean, distraction-free browser extension that opens random articles from cura
 - 🏷️ **Tag-based filtering** — include/exclude categories (e.g. `technology`, `web`, `security`) to narrow the pool
 - 🔍 **Smart filtering** — selection pool (unread / all / starred), max article age, and keyword include/exclude
 - 🕓 **Reading history** — every article opened via Surprise Me is tracked
-- 📦 **Custom catalog** — bundled source list, or import your own `catalog.json` (file picker / drag-and-drop) or sync from a remote URL
+- 📦 **Online catalog** — the source list ships from a public gist by default, with an auto-update mechanism (checked every 6 hours) so everyone gets the latest curated sources. Import your own `catalog.json` (file picker / drag-and-drop) or point to your own URL to take control.
 - ⚡ **Background refresh** — feeds fetched automatically on a configurable interval (30 min → 30 days), no storage caps
 - 🎨 **Clean UI** — gray accent theme with a wide, rounded popup
 
@@ -84,7 +84,7 @@ Runs the Vite dev server with CRXJS hot-reload.
 
 ### Catalog
 
-Sources live in `src/catalog.json`. Each source has:
+Sources live in `catalog.json` (repo root) and are also published to a [public gist](https://gist.github.com/GrishMahat/bbe566d031b9847e8e83a367a5838253) that serves as the default remote `catalogUrl` — so every user shares the same curated list. Each source has:
 
 ```json
 {
@@ -98,9 +98,28 @@ Sources live in `src/catalog.json`. Each source has:
 }
 ```
 
-Supported feed types: `rss`, `atom`, `sitemap`.
+- **`type`** — the feed format: `rss`, `atom`, or `sitemap`.
+- **`include`** / **`exclude`** (optional) — path-prefix filters on the article URL.
 
-You can import your own catalog via the **Catalog** section in Options (drag-and-drop a `.json` file) or set a remote `catalogUrl` and sync.
+`include`/`exclude` are mainly useful for **`sitemap`** sources, which list every URL on a site — including landing and category pages — so path filters keep only the real articles (e.g. `"/about/news/"` keeps news posts, `"/archive/"` drops archive pages).
+
+RSS and Atom feeds generally link straight to an article, so they usually need no filtering. Add `exclude` only if a feed's links redirect to the blog homepage or a wrong page instead of the article:
+
+```json
+{
+  "id": "example-feed",
+  "name": "Example Feed",
+  "type": "rss",
+  "url": "https://example.com/rss",
+  "enabled": true,
+  "tags": ["web"],
+  "exclude": ["/redirect/", "/home"]
+}
+```
+
+The bundled catalog ships with 70+ verified sources across tech, web, security, science, and maker niches.
+
+You can import your own catalog via the **Catalog** section in Options (drag-and-drop a `.json` file) or set a remote `catalogUrl` and sync. By default the extension checks the online catalog every 6 hours and auto-applies updates (guarded by the catalog `version` field), preserving your enabled/disabled source toggles.
 
 ## Scripts
 
@@ -114,6 +133,7 @@ You can import your own catalog via the **Catalog** section in Options (drag-and
 ## Project Structure
 
 ```
+catalog.json          # Source catalog (published to the gist used as default online catalog)
 src/
 ├── background/       # Service worker: message router, feed refresh, alarms
 │   ├── worker.ts     # Message handlers (GET_SOURCES, OPEN_RANDOM, GET_HISTORY, ...)
@@ -126,7 +146,6 @@ src/
 ├── providers/        # RSS / Atom / sitemap parsers
 ├── models/           # Zod schemas & types
 ├── icons/            # Extension icons & logo
-├── catalog.json      # Bundled source catalog
 └── manifest.json     # Extension manifest
 ```
 

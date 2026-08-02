@@ -33,25 +33,34 @@ function matchesPatterns(url: string, patterns: string[]): boolean {
   try {
     const urlObj = new URL(url);
     const pathname = urlObj.pathname;
-    return patterns.some((pattern) => pathname.startsWith(pattern));
+    return patterns.some((pattern) => {
+      if (pattern === '/') return pathname === '/' || pathname === '';
+      return pathname.startsWith(pattern);
+    });
   } catch {
     return false;
   }
 }
 
-function filterSitemapUrls(urls: string[], source: Source): string[] {
-  if (!source.include?.length && !source.exclude?.length) {
-    return urls;
+function isHomepage(url: string): boolean {
+  try {
+    const pathname = new URL(url).pathname;
+    return pathname === '/' || pathname === '';
+  } catch {
+    return false;
   }
-  return urls.filter((url) => {
-    if (source.include?.length && !matchesPatterns(url, source.include)) {
-      return false;
-    }
-    if (source.exclude?.length && matchesPatterns(url, source.exclude)) {
-      return false;
-    }
-    return true;
-  });
+}
+
+function isUrlAllowed(url: string, source: Source): boolean {
+  if (!url) return false;
+  if (isHomepage(url)) return false;
+  if (source.include?.length && !matchesPatterns(url, source.include)) {
+    return false;
+  }
+  if (source.exclude?.length && matchesPatterns(url, source.exclude)) {
+    return false;
+  }
+  return true;
 }
 
 function getAttr(obj: XmlObject | undefined, key: string): string | undefined {
@@ -85,7 +94,8 @@ export function parseRSS(source: Source, xml: string): Article[] {
       fetchedAt: Date.now(),
       read: false,
       starred: false,
-    }));
+    }))
+    .filter((article) => isUrlAllowed(article.url, source));
 }
 
 export function parseAtom(source: Source, xml: string): Article[] {
@@ -115,7 +125,8 @@ export function parseAtom(source: Source, xml: string): Article[] {
         read: false,
         starred: false,
       };
-    });
+    })
+    .filter((article) => isUrlAllowed(article.url, source));
 }
 
 export function parseSitemap(source: Source, xml: string): Article[] {
@@ -129,7 +140,7 @@ export function parseSitemap(source: Source, xml: string): Article[] {
     .map((url) => String(getXmlObjectValue(url, 'loc') || getXmlObjectValue(url, '@_href') || ''))
     .filter(Boolean);
 
-  const filteredUrls = filterSitemapUrls(rawUrls, source);
+  const filteredUrls = rawUrls.filter((url) => isUrlAllowed(url, source));
 
   return filteredUrls.map((url) => ({
     id: generateId(source.id, url),

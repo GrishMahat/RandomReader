@@ -36,7 +36,7 @@ export const ArticleSchema = z.object({
 export type Article = z.infer<typeof ArticleSchema>;
 
 export const SettingsSchema = z.object({
-  catalogUrl: z.string().default(''),
+  catalogUrl: z.string().default('https://gist.githubusercontent.com/GrishMahat/bbe566d031b9847e8e83a367a5838253/raw/catalog.json'),
   autoRefreshInterval: z.number().default(86400000),
   openIn: z.enum(['new_tab', 'current_tab']).default('new_tab'),
   includeTags: z.array(z.string()).default([]),
@@ -61,7 +61,7 @@ export const CatalogSchema = z.object({
 export type Catalog = z.infer<typeof CatalogSchema>;
 
 export const DEFAULT_SETTINGS: Settings = {
-  catalogUrl: '',
+  catalogUrl: 'https://gist.githubusercontent.com/GrishMahat/bbe566d031b9847e8e83a367a5838253/raw/catalog.json',
   autoRefreshInterval: 86400000,
   openIn: 'new_tab',
   includeTags: [],

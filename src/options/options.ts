@@ -527,7 +527,7 @@ export class RandomReaderOptions extends LitElement {
   private renderCatalog() {
     return html`
       <div class="section-title">Catalog</div>
-      <div class="section-desc">Import a local catalog file or sync from a remote URL to add new sources.</div>
+      <div class="section-desc">The catalog is fetched from the default online URL and auto-updates every 6 hours. Import a local catalog file or point to your own URL to take control.</div>
 
       <div class="card">
         <div class="card-header"><span class="card-title">Import Catalog File</span></div>
@@ -558,7 +558,7 @@ export class RandomReaderOptions extends LitElement {
               @input=${(e: Event) => { this.settings = { ...this.settings, catalogUrl: (e.target as HTMLInputElement).value }; }}
               placeholder="https://raw.githubusercontent.com/.../catalog.json"
             />
-            <div class="help-text">Catalog will be fetched and merged with your existing sources on sync.</div>
+            <div class="help-text">Leave empty to disable auto-updates. Changes to the online catalog are applied on the next check, preserving your source toggles.</div>
           </div>
           <div class="btn-group">
             <button class="btn btn-secondary" @click=${this.handleRefreshCatalog}>Sync Catalog</button>

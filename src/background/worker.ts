@@ -1,10 +1,13 @@
-import { refreshCatalog, getSettings, setSettings, getCatalog, setCatalog, importCatalogFromJson } from './catalog';
+import { refreshCatalog, updateCatalogIfNewer, getSettings, setSettings, getCatalog, setCatalog, importCatalogFromJson } from './catalog';
 import { refreshFeeds, clearOldArticles } from './feeds';
 import { handleOpenRandom, handleGetRandom } from './random';
 import type { Settings } from '../models';
 
 const ALARM_REFRESH = 'refresh-feeds';
 const ALARM_CLEANUP = 'cleanup-old-articles';
+const ALARM_CATALOG = 'update-catalog';
+
+const CATALOG_UPDATE_INTERVAL_MINUTES = 6 * 60;
 
 chrome.runtime.onInstalled.addListener(async () => {
   await refreshCatalog();
@@ -22,6 +25,7 @@ async function scheduleAlarmsFromSettings(): Promise<void> {
   const settings = await getSettings();
   chrome.alarms.clearAll();
   chrome.alarms.create(ALARM_REFRESH, { when: Date.now() + settings.autoRefreshInterval });
+  chrome.alarms.create(ALARM_CATALOG, { delayInMinutes: CATALOG_UPDATE_INTERVAL_MINUTES, periodInMinutes: CATALOG_UPDATE_INTERVAL_MINUTES });
   chrome.alarms.create(ALARM_CLEANUP, { when: Date.now() + 24 * 60 * 60 * 1000 });
 }
 
@@ -37,6 +41,9 @@ chrome.alarms.onAlarm.addListener(async (alarm: Alarm) => {
       await refreshCatalog();
       await refreshFeeds();
       await scheduleAlarmsFromSettings();
+      break;
+    case ALARM_CATALOG:
+      await updateCatalogIfNewer();
       break;
     case ALARM_CLEANUP:
       await clearOldArticles();

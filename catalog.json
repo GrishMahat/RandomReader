@@ -1,0 +1,704 @@
+{
+  "version": 2,
+  "updatedAt": "2026-08-02T12:00:00Z",
+  "sources": [
+    {
+      "id": "hn-frontpage",
+      "name": "Hacker News",
+      "type": "rss",
+      "url": "https://news.ycombinator.com/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "tech", "news"]
+    },
+    {
+      "id": "lobsters",
+      "name": "Lobsters",
+      "type": "rss",
+      "url": "https://lobste.rs/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "tech", "programming"]
+    },
+    {
+      "id": "mozilla-hacks",
+      "name": "Mozilla Hacks",
+      "type": "rss",
+      "url": "https://hacks.mozilla.org/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["web", "browsers"]
+    },
+    {
+      "id": "smashing-magazine",
+      "name": "Smashing Magazine",
+      "type": "rss",
+      "url": "https://www.smashingmagazine.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["web", "design"]
+    },
+    {
+      "id": "css-tricks",
+      "name": "CSS-Tricks",
+      "type": "rss",
+      "url": "https://css-tricks.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["web", "css", "design"]
+    },
+    {
+      "id": "dev-to",
+      "name": "DEV Community",
+      "type": "rss",
+      "url": "https://dev.to/feed",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "programming", "tech"]
+    },
+    {
+      "id": "the-verge",
+      "name": "The Verge",
+      "type": "rss",
+      "url": "https://www.theverge.com/rss/index.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "tech", "news", "gadgets"]
+    },
+    {
+      "id": "ars-technica",
+      "name": "Ars Technica",
+      "type": "rss",
+      "url": "https://feeds.arstechnica.com/arstechnica/index",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "tech", "news"]
+    },
+    {
+      "id": "ars-technica-science",
+      "name": "Ars Technica Science",
+      "type": "rss",
+      "url": "https://feeds.arstechnica.com/arstechnica/science",
+      "language": "en",
+      "enabled": true,
+      "tags": ["science", "technology"]
+    },
+    {
+      "id": "engadget",
+      "name": "Engadget",
+      "type": "rss",
+      "url": "https://www.engadget.com/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "gadgets", "news"]
+    },
+    {
+      "id": "techcrunch",
+      "name": "TechCrunch",
+      "type": "rss",
+      "url": "https://techcrunch.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "tech", "news", "startups"]
+    },
+    {
+      "id": "wired",
+      "name": "Wired",
+      "type": "rss",
+      "url": "https://www.wired.com/feed/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "tech", "news"]
+    },
+    {
+      "id": "gizmodo",
+      "name": "Gizmodo",
+      "type": "rss",
+      "url": "https://gizmodo.com/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "gadgets", "news"]
+    },
+    {
+      "id": "venturebeat",
+      "name": "VentureBeat",
+      "type": "rss",
+      "url": "https://venturebeat.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "tech", "ai", "news"]
+    },
+    {
+      "id": "the-register",
+      "name": "The Register",
+      "type": "atom",
+      "url": "https://www.theregister.com/headlines.atom",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "tech", "news", "enterprise"]
+    },
+    {
+      "id": "howtogeek",
+      "name": "How-To Geek",
+      "type": "rss",
+      "url": "https://www.howtogeek.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "howto", "windows"]
+    },
+    {
+      "id": "9to5mac",
+      "name": "9to5Mac",
+      "type": "rss",
+      "url": "https://9to5mac.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["apple", "technology", "news"]
+    },
+    {
+      "id": "9to5google",
+      "name": "9to5Google",
+      "type": "rss",
+      "url": "https://9to5google.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["google", "android", "technology", "news"]
+    },
+    {
+      "id": "android-police",
+      "name": "Android Police",
+      "type": "rss",
+      "url": "https://www.androidpolice.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["android", "google", "technology"]
+    },
+    {
+      "id": "phoronix",
+      "name": "Phoronix",
+      "type": "rss",
+      "url": "https://www.phoronix.com/rss.php",
+      "language": "en",
+      "enabled": true,
+      "tags": ["linux", "hardware", "performance"]
+    },
+    {
+      "id": "thenextweb",
+      "name": "TNW",
+      "type": "rss",
+      "url": "https://thenextweb.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "tech", "news"]
+    },
+    {
+      "id": "betanews",
+      "name": "BetaNews",
+      "type": "rss",
+      "url": "https://betanews.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "software", "news"]
+    },
+    {
+      "id": "bbc-news",
+      "name": "BBC News",
+      "type": "rss",
+      "url": "https://feeds.bbci.co.uk/news/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["news"]
+    },
+    {
+      "id": "the-guardian",
+      "name": "The Guardian",
+      "type": "rss",
+      "url": "https://www.theguardian.com/world/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["news", "world"]
+    },
+    {
+      "id": "npr",
+      "name": "NPR",
+      "type": "rss",
+      "url": "https://feeds.npr.org/1001/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["news"]
+    },
+    {
+      "id": "nytimes",
+      "name": "The New York Times",
+      "type": "rss",
+      "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["news"]
+    },
+    {
+      "id": "washington-post",
+      "name": "Washington Post",
+      "type": "rss",
+      "url": "https://feeds.washingtonpost.com/rss/world",
+      "language": "en",
+      "enabled": true,
+      "tags": ["news", "world"]
+    },
+    {
+      "id": "cnet",
+      "name": "CNET",
+      "type": "rss",
+      "url": "https://www.cnet.com/rss/news/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "news", "gadgets"]
+    },
+    {
+      "id": "pc-world",
+      "name": "PC World",
+      "type": "rss",
+      "url": "https://www.pcworld.com/index.rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "pc", "hardware"]
+    },
+    {
+      "id": "toms-hardware",
+      "name": "Tom's Hardware",
+      "type": "rss",
+      "url": "https://www.tomshardware.com/feeds/all",
+      "language": "en",
+      "enabled": true,
+      "tags": ["hardware", "technology", "pc"]
+    },
+    {
+      "id": "zdnet",
+      "name": "ZDNet",
+      "type": "rss",
+      "url": "https://www.zdnet.com/news/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "enterprise", "news"]
+    },
+    {
+      "id": "hackernoon",
+      "name": "HackerNoon",
+      "type": "rss",
+      "url": "https://hackernoon.com/feed",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "programming", "tech"]
+    },
+    {
+      "id": "julia-evans",
+      "name": "Julia Evans",
+      "type": "atom",
+      "url": "https://jvns.ca/atom.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "systems"]
+    },
+    {
+      "id": "overreacted",
+      "name": "Overreacted",
+      "type": "rss",
+      "url": "https://overreacted.io/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "javascript"]
+    },
+    {
+      "id": "coding-horror",
+      "name": "Coding Horror",
+      "type": "rss",
+      "url": "https://blog.codinghorror.com/rss/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "software"]
+    },
+    {
+      "id": "freecodecamp",
+      "name": "freeCodeCamp",
+      "type": "rss",
+      "url": "https://www.freecodecamp.org/news/rss/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "web", "education"]
+    },
+    {
+      "id": "github-blog",
+      "name": "GitHub Blog",
+      "type": "rss",
+      "url": "https://github.blog/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "devtools", "opensource"]
+    },
+    {
+      "id": "web-dev",
+      "name": "web.dev",
+      "type": "rss",
+      "url": "https://web.dev/feed.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["web", "performance", "javascript"]
+    },
+    {
+      "id": "mozilla-blog",
+      "name": "Mozilla Blog",
+      "type": "rss",
+      "url": "https://blog.mozilla.org/en/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["web", "privacy", "browsers"]
+    },
+    {
+      "id": "a-list-apart",
+      "name": "A List Apart",
+      "type": "rss",
+      "url": "https://alistapart.com/main/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["web", "design", "frontend"]
+    },
+    {
+      "id": "javascript-weekly",
+      "name": "JavaScript Weekly",
+      "type": "rss",
+      "url": "https://javascriptweekly.com/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["javascript", "programming"]
+    },
+    {
+      "id": "react-status",
+      "name": "React Status",
+      "type": "rss",
+      "url": "https://react.statuscode.com/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["javascript", "react", "programming"]
+    },
+    {
+      "id": "rust-blog",
+      "name": "Rust Blog",
+      "type": "rss",
+      "url": "https://blog.rust-lang.org/feed.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "rust", "systems"]
+    },
+    {
+      "id": "golang-blog",
+      "name": "Go Blog",
+      "type": "atom",
+      "url": "https://go.dev/blog/feed.atom",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "go"]
+    },
+    {
+      "id": "python-blog",
+      "name": "Python Blog",
+      "type": "atom",
+      "url": "https://blog.python.org/feeds/posts/default",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "python"]
+    },
+    {
+      "id": "kubernetes-blog",
+      "name": "Kubernetes Blog",
+      "type": "rss",
+      "url": "https://kubernetes.io/feed.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["devops", "containers", "programming"]
+    },
+    {
+      "id": "cloudflare-blog",
+      "name": "Cloudflare Blog",
+      "type": "rss",
+      "url": "https://blog.cloudflare.com/rss/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["web", "security", "infrastructure"]
+    },
+    {
+      "id": "docker-blog",
+      "name": "Docker Blog",
+      "type": "rss",
+      "url": "https://www.docker.com/blog/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["devops", "containers"]
+    },
+    {
+      "id": "microsoft-devblogs",
+      "name": "Microsoft Developer Blogs",
+      "type": "rss",
+      "url": "https://devblogs.microsoft.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "microsoft", "devtools"]
+    },
+    {
+      "id": "jetbrains-blog",
+      "name": "JetBrains Blog",
+      "type": "rss",
+      "url": "https://blog.jetbrains.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["programming", "devtools"]
+    },
+    {
+      "id": "digitalocean-blog",
+      "name": "DigitalOcean Blog",
+      "type": "rss",
+      "url": "https://www.digitalocean.com/blog/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["devops", "cloud", "programming"]
+    },
+    {
+      "id": "logrocket-blog",
+      "name": "LogRocket Blog",
+      "type": "rss",
+      "url": "https://blog.logrocket.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["javascript", "react", "programming"]
+    },
+    {
+      "id": "vercel-blog",
+      "name": "Vercel Blog",
+      "type": "rss",
+      "url": "https://vercel.com/blog/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["web", "frontend", "devtools"]
+    },
+    {
+      "id": "vite-blog",
+      "name": "Vite Blog",
+      "type": "rss",
+      "url": "https://vitejs.dev/blog.rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["javascript", "web", "devtools"]
+    },
+    {
+      "id": "schneier",
+      "name": "Schneier on Security",
+      "type": "atom",
+      "url": "https://www.schneier.com/feed/atom/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["security", "privacy"]
+    },
+    {
+      "id": "eff-deeplinks",
+      "name": "EFF Updates",
+      "type": "rss",
+      "url": "https://www.eff.org/rss/updates.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["security", "privacy", "civil-liberties"]
+    },
+    {
+      "id": "cisa-advisories",
+      "name": "CISA Advisories",
+      "type": "rss",
+      "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["security"]
+    },
+    {
+      "id": "krebs",
+      "name": "Krebs on Security",
+      "type": "rss",
+      "url": "https://krebsonsecurity.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["security", "cybercrime"]
+    },
+    {
+      "id": "bleeping-computer",
+      "name": "Bleeping Computer",
+      "type": "rss",
+      "url": "https://www.bleepingcomputer.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["security", "news"]
+    },
+    {
+      "id": "troy-hunt",
+      "name": "Troy Hunt",
+      "type": "rss",
+      "url": "https://www.troyhunt.com/rss/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["security", "privacy", "breaches"]
+    },
+    {
+      "id": "dark-reading",
+      "name": "Dark Reading",
+      "type": "rss",
+      "url": "https://www.darkreading.com/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["security", "enterprise"]
+    },
+    {
+      "id": "sciencedaily",
+      "name": "ScienceDaily",
+      "type": "rss",
+      "url": "https://www.sciencedaily.com/rss/all.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["science", "news"]
+    },
+    {
+      "id": "phys-org",
+      "name": "Phys.org",
+      "type": "rss",
+      "url": "https://phys.org/rss-feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["science", "physics"]
+    },
+    {
+      "id": "quanta",
+      "name": "Quanta Magazine",
+      "type": "rss",
+      "url": "https://www.quantamagazine.org/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["science", "math", "physics"]
+    },
+    {
+      "id": "space",
+      "name": "Space.com",
+      "type": "rss",
+      "url": "https://www.space.com/feeds/all",
+      "language": "en",
+      "enabled": true,
+      "tags": ["space", "science"]
+    },
+    {
+      "id": "nasa",
+      "name": "NASA",
+      "type": "rss",
+      "url": "https://www.nasa.gov/news-release/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["space", "science", "news"]
+    },
+    {
+      "id": "ieee-spectrum",
+      "name": "IEEE Spectrum",
+      "type": "rss",
+      "url": "https://spectrum.ieee.org/feeds/feed.rss",
+      "language": "en",
+      "enabled": true,
+      "tags": ["technology", "engineering", "science"]
+    },
+    {
+      "id": "scitechdaily",
+      "name": "SciTechDaily",
+      "type": "rss",
+      "url": "https://scitechdaily.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["science", "technology", "news"]
+    },
+    {
+      "id": "hackaday",
+      "name": "Hackaday",
+      "type": "rss",
+      "url": "https://hackaday.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["hardware", "maker", "hacking"]
+    },
+    {
+      "id": "adafruit",
+      "name": "Adafruit Blog",
+      "type": "rss",
+      "url": "https://blog.adafruit.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["hardware", "maker", "electronics"]
+    },
+    {
+      "id": "makezine",
+      "name": "Make:",
+      "type": "rss",
+      "url": "https://makezine.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["maker", "hardware", "diy"]
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "type": "rss",
+      "url": "https://openai.com/news/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["ai", "technology"]
+    },
+    {
+      "id": "deepmind",
+      "name": "Google DeepMind",
+      "type": "rss",
+      "url": "https://deepmind.google/blog/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": ["ai", "science"]
+    },
+    {
+      "id": "google-ai",
+      "name": "Google AI",
+      "type": "rss",
+      "url": "https://blog.google/technology/ai/rss/",
+      "language": "en",
+      "enabled": true,
+      "tags": ["ai", "google", "technology"]
+    },
+    {
+      "id": "apple-newsroom",
+      "name": "Apple Newsroom",
+      "type": "sitemap",
+      "url": "https://www.apple.com/newsroom/sitemap.xml",
+      "language": "en",
+      "enabled": true,
+      "include": ["/newsroom/20"],
+      "exclude": ["/newsroom/archive/", "/newsroom/guide-", "/newsroom/event/", "/newsroom/topics/"],
+      "tags": ["apple", "technology", "news"]
+    },
+    {
+      "id": "postgresql-news",
+      "name": "PostgreSQL News",
+      "type": "sitemap",
+      "url": "https://www.postgresql.org/sitemap.xml",
+      "language": "en",
+      "enabled": true,
+      "include": ["/about/news/"],
+      "tags": ["database", "opensource", "programming"]
+    },
+    {
+      "id": "smashing-sitemap",
+      "name": "Smashing Articles (sitemap)",
+      "type": "sitemap",
+      "url": "https://www.smashingmagazine.com/sitemap.xml",
+      "language": "en",
+      "enabled": true,
+      "include": ["/20"],
+      "exclude": ["/ebook-bundles/", "/author/", "/category/"],
+      "tags": ["web", "design", "frontend"]
+    }
+  ]
+}
