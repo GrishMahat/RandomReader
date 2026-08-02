@@ -4,7 +4,10 @@
 
 A clean, distraction-free browser extension that opens random articles from curated feeds. Click **Surprise Me** and let chance decide what you read next.
 
-![GitHub License](https://img.shields.io/github/license/random-reader/random-reader)
+![GitHub License](https://img.shields.io/github/license/GrishMahat/RandomReader)
+
+> **Why is the UI so terrible and nothing seems to work?**
+> Don't look at me. I just wrote the extension. The UI has its own personal issues, and frankly, we don't talk about it.
 
 ## Features
 
