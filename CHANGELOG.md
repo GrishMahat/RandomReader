@@ -18,7 +18,7 @@ All notable changes to Random Reader are documented here. The format follows [Ke
 - **Asset imports**: fixed relative paths for icons in popup/options components
 - **Release naming**: zips now include browser identifier to avoid confusion
 
-## v1.0.0 - 2026-08-03
+## v0.1.2 - 2026-08-03
 
 ### Added
 - **Hybrid random pool**: "Surprise Me" now prefers articles from the stored pool (filtered to enabled sources), falling back to a live fetch of a random source (up to 8 attempts) when the pool is empty.

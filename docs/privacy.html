@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Random Reader — Privacy Policy</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      max-width: 800px; margin: 0 auto; padding: 2rem 1rem;
+      font: 16px/1.6 system-ui, -apple-system, sans-serif; color: #1a1a1a;
+    }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .meta { color: #666; margin-bottom: 2rem; }
+    h2 { margin-top: 2.5rem; padding-bottom: 0.3rem; border-bottom: 1px solid #eee; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { border: 1px solid #ddd; padding: 0.75rem; text-align: left; }
+    th { background: #f5f5f5; }
+    a { color: #0066cc; }
+    a:hover { text-decoration: underline; }
+    footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #666; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Random Reader — Privacy Policy</h1>
+  <p class="meta">Last updated: August 3, 2026</p>
+
+  <p>Random Reader ("the extension") is a browser extension that helps you discover random articles from curated RSS/Atom feeds. This policy explains what data the extension collects, how it's used, and your rights.</p>
+
+  <h2>Data We Collect (Stored Locally on Your Device)</h2>
+  <p>The extension stores the following data <strong>locally in your browser</strong> using Chrome/Firefox storage APIs. This data never leaves your device unless you explicitly export it.</p>
+
+  <table>
+    <thead>
+      <tr><th>Data Type</th><th>Purpose</th><th>Retention</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Reading history</td><td>Track articles you've opened via "Surprise Me" (title, URL, source, author, timestamp)</td><td>Capped at 200 entries, oldest removed first</td></tr>
+      <tr><td>Starred articles</td><td>Articles you've marked as favorites</td><td>Until you un-star or clear data</td></tr>
+      <tr><td>Settings</td><td>Your preferences (theme, open behavior, filters, refresh interval, sound, etc.)</td><td>Until changed or reset</td></tr>
+      <tr><td>Source toggles</td><td>Which of the 136+ catalog sources are enabled/disabled</td><td>Until changed</td></tr>
+      <tr><td>Blocked domains</td><td>Domains you've chosen to exclude from results</td><td>Until removed</td></tr>
+      <tr><td>Feed cache</td><td>Fetched article metadata (title, URL, publication date, source) for the random pool</td><td>90 days, auto-cleaned</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Data We Do NOT Collect</h2>
+  <ul>
+    <li>No personal identifiers (name, email, IP address)</li>
+    <li>No browsing history outside the extension</li>
+    <li>No analytics, telemetry, or usage tracking</li>
+    <li>No data sent to any external server (including the developer)</li>
+    <li>No advertising IDs or cross-site tracking</li>
+  </ul>
+
+  <h2>Network Requests</h2>
+  <p>The extension makes network requests <strong>only</strong> to:</p>
+  <ol>
+    <li><strong>RSS/Atom feed URLs</strong> defined in the source catalog (e.g., <code>https://example.com/feed.xml</code>) — to fetch article lists</li>
+    <li><strong>Sitemap URLs</strong> defined in the source catalog — to resolve article titles</li>
+    <li><strong>Optional remote catalog URL</strong> (default: GitHub raw URL) — to check for catalog updates every 6 hours</li>
+  </ol>
+  <p>All requests are initiated by the background worker on your behalf. No cookies, auth tokens, or user identifiers are sent.</p>
+
+  <h2>Your Rights & Controls</h2>
+  <ul>
+    <li><strong>View/export history</strong>: Options → History → Export CSV/JSON</li>
+    <li><strong>Clear history</strong>: Options → History → Clear History</li>
+    <li><strong>Clear all data</strong>: Options → General → Clear All Data (removes history, stars, cached articles)</li>
+    <li><strong>Reset settings</strong>: Options → General → Restore Defaults</li>
+    <li><strong>Disable feeds</strong>: Options → Sources → toggle any source off</li>
+    <li><strong>Block domains</strong>: Options → Catalog → Blocked Domains</li>
+    <li><strong>Uninstall</strong>: Removes all local data automatically</li>
+  </ul>
+
+  <h2>Third-Party Services</h2>
+  <p>The default catalog is hosted on GitHub (<code>raw.githubusercontent.com</code>). Fetching it is subject to GitHub's privacy policy. You can switch to a local catalog file in Options → Catalog to avoid this request.</p>
+
+  <h2>Children's Privacy</h2>
+  <p>This extension is not directed at children under 13. We do not knowingly collect data from children.</p>
+
+  <h2>Changes to This Policy</h2>
+  <p>Updates will be posted here with a new "Last updated" date. Continued use after changes constitutes acceptance.</p>
+
+  <h2>Contact</h2>
+  <p>Questions: <a href="https://github.com/grishmahat/random-reader/issues">GitHub Issues</a> or email the developer.</p>
+
+  <footer>
+    <p><strong>Summary:</strong> Your data stays on your device. We don't see it, sell it, or track you.</p>
+  </footer>
+</body>
+</html>
