@@ -43,7 +43,7 @@ pnpm install
 pnpm build
 ```
 
-The built extension lands in `dist/`.
+The built extension lands in `dist/chrome/`.
 
 ### Build for Firefox
 
@@ -51,14 +51,14 @@ The built extension lands in `dist/`.
 pnpm build:firefox
 ```
 
-Outputs to `dist-firefox/` with a `browser_specific_settings.gecko` manifest. Zip the folder contents and upload to [Firefox Add-ons](https://addons.mozilla.org/) (free, no developer fee).
+Outputs to `dist/firefox/` with a `browser_specific_settings.gecko` manifest. Zip the folder contents and upload to [Firefox Add-ons](https://addons.mozilla.org/) (free, no developer fee).
 
 ### Load in Chrome (unpacked)
 
 1. Open `chrome://extensions`
 2. Enable **Developer mode** (toggle in the top-right)
 3. Click **Load unpacked**
-4. Select the `dist/` folder
+4. Select the `dist/chrome/` folder
 5. Pin the extension and click the toolbar icon
 
 ### Development
@@ -126,7 +126,8 @@ You can import your own catalog via the **Catalog** section in Options (drag-and
 | Command | Description |
 | --- | --- |
 | `pnpm dev` | Vite dev server with HMR |
-| `pnpm build` | Type-check then build to `dist/` |
+| `pnpm build` | Type-check then build to `dist/chrome/` |
+| `pnpm build:firefox` | Type-check then build to `dist/firefox/` |
 | `pnpm preview` | Preview the build |
 | `pnpm lint` | Type-check only (`tsc --noEmit`) |
 

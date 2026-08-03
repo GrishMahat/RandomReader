@@ -33,15 +33,15 @@ jobs:
         run: pnpm build
 
       - name: Package Chrome zip
-        working-directory: dist
-        run: zip -r ../random-reader-chrome.zip . -x "*.map"
+        working-directory: dist/chrome
+        run: zip -r ../../random-reader-chrome.zip . -x "*.map"
 
       - name: Build for Firefox
         run: pnpm build:firefox
 
       - name: Package Firefox zip
-        working-directory: dist-firefox
-        run: zip -r ../random-reader-firefox.zip . -x "*.map"
+        working-directory: dist/firefox
+        run: zip -r ../../random-reader-firefox.zip . -x "*.map"
 
       - name: Get version from tag
         id: version

@@ -19,7 +19,7 @@ const manifest = isFirefox
 export default defineConfig({
   plugins: [crx({ manifest })],
   build: {
-    outDir: isFirefox ? 'dist-firefox' : 'dist',
+    outDir: isFirefox ? 'dist/firefox' : 'dist/chrome',
     emptyOutDir: true,
   },
 });
