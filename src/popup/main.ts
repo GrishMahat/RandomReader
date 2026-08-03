@@ -208,7 +208,7 @@ export class RandomReaderPopup extends LitElement {
       <header>
         <div class="brand">
           <span class="logo" aria-hidden="true">
-            <img src=${new URL('../../src/icons/icon-32.png', import.meta.url).href} alt="" width="28" height="28" />
+            <img src=${new URL('../icons/icon-32.png', import.meta.url).href} alt="" width="28" height="28" />
           </span>
           <div>
             <div class="title">Random Reader</div>

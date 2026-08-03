@@ -1029,7 +1029,7 @@ export class RandomReaderOptions extends LitElement {
       <div class="onboarding">
         <div class="onboard-card">
           <div class="onboard-hero">
-            <img src=${new URL('../../src/icons/icon-32.png', import.meta.url).href} alt="" width="56" height="56" class="onboard-logo" />
+            <img src=${new URL('../icons/icon-32.png', import.meta.url).href} alt="" width="56" height="56" class="onboard-logo" />
             <h1>Welcome to Random Reader</h1>
             <p class="onboard-sub">
               Pick what you're into and we'll roll articles from those topics. You can change this anytime in Settings.
@@ -1098,7 +1098,7 @@ export class RandomReaderOptions extends LitElement {
         <!-- Top bar -->
         <header class="topbar">
           <div class="topbar-logo">
-            <img src=${new URL('../../src/icons/icon-32.png', import.meta.url).href} alt="" width="32" height="32" />
+            <img src=${new URL('../icons/icon-32.png', import.meta.url).href} alt="" width="32" height="32" />
           </div>
           <span class="topbar-title">Random Reader</span>
           <span class="topbar-sub">Settings</span>

@@ -2,7 +2,23 @@
 
 All notable changes to Random Reader are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/) and this project uses [Semantic Versioning](https://semver.org/).
 
-## v0.1.2 - 2026-08-03
+## Unreleased
+
+### Added
+- **CRXJS migration**: project now uses `@crxjs/vite-plugin` with `manifest.config.ts` for type-safe manifest, HMR via `chrome-extension://` CORS, and `vite-plugin-zip-pack` for releases
+- **Separate Chrome/Firefox release zips**: `random-reader-chrome.zip` and `random-reader-firefox.zip` with browser-specific manifests
+- **GitHub Actions release workflow**: automated builds on tag push (`v*`), creates release with both zips
+
+### Changed
+- **Project structure**: reorganized `src/` to CRXJS conventions — `popup/main.ts`, `options/main.ts`, `background/main.ts` with `index.html` entry points
+- **Manifest**: moved from `src/manifest.json` to root `manifest.config.ts` using plain object export
+- **Build config**: added dev-server CORS for hot-reload, Firefox build uses `background.scripts` + `browser_specific_settings`
+
+### Fixed
+- **Asset imports**: fixed relative paths for icons in popup/options components
+- **Release naming**: zips now include browser identifier to avoid confusion
+
+## v1.0.0 - 2026-08-03
 
 ### Added
 - **Hybrid random pool**: "Surprise Me" now prefers articles from the stored pool (filtered to enabled sources), falling back to a live fetch of a random source (up to 8 attempts) when the pool is empty.

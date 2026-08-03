@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 permissions:
   contents: write
@@ -12,63 +12,50 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 11.3.0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: 22
-          cache: pnpm
+          node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build for Chrome
-        run: pnpm build
+      - name: Build Chrome
+        run: pnpm run build
 
-      - name: Package Chrome zip
-        working-directory: dist/chrome
-        run: zip -r ../../random-reader-chrome.zip . -x "*.map"
+      - name: Build Firefox
+        run: pnpm run build:firefox
 
-      - name: Build for Firefox
-        run: pnpm build:firefox
+      - name: Upload Chrome artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: random-reader-chrome
+          path: release/random-reader-chrome.zip
 
-      - name: Package Firefox zip
-        working-directory: dist/firefox
-        run: zip -r ../../random-reader-firefox.zip . -x "*.map"
+      - name: Upload Firefox artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: random-reader-firefox
+          path: release/random-reader-firefox.zip
 
-      - name: Get version from tag
-        id: version
-        run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
-
-      - name: Extract release notes from CHANGELOG
-        id: notes
-        run: |
-          {
-            echo "notes<<__NOTES_EOF__"
-            awk -v tag="${GITHUB_REF#refs/tags/}" '
-              /^## / {
-                if (found) exit
-                if ($0 ~ "^## " tag "([[:space:]]|$)") found = 1
-                next
-              }
-              found { print }
-            ' CHANGELOG.md
-            echo "__NOTES_EOF__"
-          } >> "$GITHUB_OUTPUT"
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: Random Reader ${{ steps.version.outputs.tag }}
-          body: ${{ steps.notes.outputs.notes }}
           files: |
-            random-reader-chrome.zip
-            random-reader-firefox.zip
+            artifacts/random-reader-chrome/random-reader-chrome.zip
+            artifacts/random-reader-firefox/random-reader-firefox.zip
+          generate_release_notes: true

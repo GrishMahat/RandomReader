@@ -1,12 +1,17 @@
 import { defineConfig } from 'vite';
 import { crx } from '@crxjs/vite-plugin';
-import chromeManifest from './src/manifest.json' with { type: 'json' };
+import manifest from './manifest.config.ts';
+import zip from 'vite-plugin-zip-pack';
 
 const isFirefox = process.env.BROWSER === 'firefox';
 
-const manifest = isFirefox
+const firefoxManifest = isFirefox
   ? {
-      ...chromeManifest,
+      ...manifest,
+      background: {
+        scripts: [manifest.background.service_worker],
+        type: 'module',
+      },
       browser_specific_settings: {
         gecko: {
           id: 'random-reader@grishmahat.dev',
@@ -14,10 +19,18 @@ const manifest = isFirefox
         },
       },
     }
-  : chromeManifest;
+  : manifest;
 
 export default defineConfig({
-  plugins: [crx({ manifest })],
+  plugins: [
+    crx({ manifest: firefoxManifest, browser: isFirefox ? 'firefox' : 'chrome' }),
+    zip({ outDir: 'release', outFileName: `random-reader-${isFirefox ? 'firefox' : 'chrome'}.zip` }),
+  ],
+  server: {
+    cors: {
+      origin: [/chrome-extension:\/\//],
+    },
+  },
   build: {
     outDir: isFirefox ? 'dist/firefox' : 'dist/chrome',
     emptyOutDir: true,

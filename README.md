@@ -51,7 +51,16 @@ The built extension lands in `dist/chrome/`.
 pnpm build:firefox
 ```
 
-Outputs to `dist/firefox/` with a `browser_specific_settings.gecko` manifest. Zip the folder contents and upload to [Firefox Add-ons](https://addons.mozilla.org/) (free, no developer fee).
+Outputs to `dist/firefox/` with a `browser_specific_settings.gecko` manifest and a `background.scripts` event page (Firefox doesn't support MV3 `background.service_worker`).
+
+### Load in Firefox (temporary)
+
+1. Open `about:debugging#/runtime/this-firefox`
+2. Click **Load Temporary Add-on…**
+3. Select `dist/firefox/manifest.json` (Firefox wants the `manifest.json` file, not the folder)
+4. The extension stays loaded until Firefox restarts
+
+For a permanent install, zip the **contents** of `dist/firefox/` (so `manifest.json` is at the zip root) and upload to [Firefox Add-ons](https://addons.mozilla.org/) (free, no developer fee) — Firefox blocks unsigned permanent add-ons.
 
 ### Load in Chrome (unpacked)
 
