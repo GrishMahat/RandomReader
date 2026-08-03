@@ -33,13 +33,13 @@ A clean, distraction-free browser extension that opens random articles from cura
 
 ### Prerequisites
 
-- Node.js 20+
-- [pnpm](https://pnpm.io/)
+- Node.js 22+
+- [pnpm](https://pnpm.io/) v11 (install with `npm i -g pnpm@11`)
 
 ### Install & Build
 
 ```bash
-pnpm install
+pnpm install --frozen-lockfile
 pnpm build
 ```
 
@@ -52,6 +52,15 @@ pnpm build:firefox
 ```
 
 Outputs to `dist/firefox/` with a `browser_specific_settings.gecko` manifest and a `background.scripts` event page (Firefox doesn't support MV3 `background.service_worker`).
+
+### Build Outputs
+
+| Command | Output | Description |
+| --- | --- | --- |
+| `pnpm build` | `dist/chrome/` + `release/random-reader-chrome.zip` | Chrome Web Store package |
+| `pnpm build:firefox` | `dist/firefox/` + `release/random-reader-firefox.zip` + `release/random-reader.xpi` | Firefox package (AMO upload is `random-reader-firefox.zip`) |
+
+> The AMO submission package (`release/random-reader-firefox.zip`) is a zip of the `dist/firefox/` directory contents with `manifest.json` at the archive root.
 
 ### Load in Firefox (temporary)
 
@@ -144,9 +153,11 @@ You can import your own catalog via the **Catalog** section in Options (drag-and
 
 ```
 catalog.json          # Source catalog (published to the gist used as default online catalog)
+manifest.config.ts    # Shared extension manifest (CRXJS)
+vite.config.ts        # Vite/CRXJS build config, per-browser manifest, release zips
 src/
 ├── background/       # Service worker: message router, feed refresh, alarms
-│   ├── worker.ts     # Message handlers (GET_SOURCES, OPEN_RANDOM, GET_HISTORY, ...)
+│   ├── main.ts       # Message handlers (GET_SOURCES, OPEN_RANDOM, GET_HISTORY, ...)
 │   ├── feeds.ts      # Fetch, parse, store articles; random selection
 │   ├── random.ts     # Open-a-random-article logic
 │   ├── catalog.ts    # Catalog load/import/validate
@@ -155,8 +166,7 @@ src/
 ├── options/          # Options page (Lit)
 ├── providers/        # RSS / Atom / sitemap parsers
 ├── models/           # Zod schemas & types
-├── icons/            # Extension icons & logo
-└── manifest.json     # Extension manifest
+└── icons/            # Extension icons & logo
 ```
 
 ## License
