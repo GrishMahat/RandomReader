@@ -44,6 +44,12 @@ jobs:
           name: random-reader-firefox
           path: release/random-reader-firefox.zip
 
+      - name: Upload XPI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: random-reader-xpi
+          path: release/random-reader.xpi
+
   release:
     needs: build
     runs-on: ubuntu-latest
@@ -58,4 +64,5 @@ jobs:
           files: |
             artifacts/random-reader-chrome/random-reader-chrome.zip
             artifacts/random-reader-firefox/random-reader-firefox.zip
+            artifacts/random-reader-xpi/random-reader.xpi
           generate_release_notes: true
