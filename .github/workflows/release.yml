@@ -47,12 +47,28 @@ jobs:
         id: version
         run: echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
 
+      - name: Extract release notes from CHANGELOG
+        id: notes
+        run: |
+          notes=$(awk -v tag="${GITHUB_REF#refs/tags/}" '
+            /^## / {
+              if (found) exit
+              if ($0 ~ "^## " tag "([[:space:]]|$)") found = 1
+              next
+            }
+            found { print }
+          ' CHANGELOG.md)
+          notes="${notes//'%'/'%25'}"
+          notes="${notes//$'\n'/'%0A'}"
+          notes="${notes//$'\r'/'%0D'}"
+          echo "notes=$notes" >> "$GITHUB_OUTPUT"
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: Random Reader ${{ steps.version.outputs.tag }}
+          body: ${{ steps.notes.outputs.notes }}
           files: |
             random-reader-chrome.zip
             random-reader-firefox.zip
-          generate_release_notes: true

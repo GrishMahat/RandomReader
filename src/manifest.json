@@ -1,7 +1,7 @@
 {
   "name": "Random Reader",
   "description": "Read random articles from curated sources",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "manifest_version": 3,
   "permissions": ["storage", "alarms"],
   "host_permissions": ["http://*/*", "https://*/*"],
