@@ -1,4 +1,5 @@
 <svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+
   <!-- Flat background, single color -->
   <rect x="0" y="0" width="512" height="512" rx="110" fill="#1E293B"/>
 
@@ -19,4 +20,5 @@
   <!-- Single die pip, flat orange circle, tucked in the corner -->
   <circle cx="360" cy="150" r="46" fill="#F97316"/>
   <circle cx="360" cy="150" r="9" fill="#FFFFFF"/>
+
 </svg>
