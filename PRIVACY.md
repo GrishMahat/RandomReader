@@ -58,7 +58,7 @@ Updates will be posted here with a new "Last updated" date. Continued use after 
 
 ## Contact
 
-Questions: [GitHub Issues](https://github.com/grishmahat/random-reader/issues) or email the developer.
+Questions: [GitHub Issues](https://github.com/GrishMahat/RandomReader/issues) or email the developer.
 
 ---
 
