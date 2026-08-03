@@ -3,7 +3,7 @@ export default {
   name: 'Random Reader',
   description: 'Read random articles from curated sources',
   version: '0.1.2',
-  homepage_url: 'https://grishmahat.github.io/random-reader/',
+  homepage_url: 'https://grishmahat.github.io/RandomReader/',
   permissions: ['storage', 'alarms'],
   host_permissions: ['http://*/*', 'https://*/*'],
   background: {
