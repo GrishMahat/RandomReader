@@ -50,18 +50,18 @@ jobs:
       - name: Extract release notes from CHANGELOG
         id: notes
         run: |
-          notes=$(awk -v tag="${GITHUB_REF#refs/tags/}" '
-            /^## / {
-              if (found) exit
-              if ($0 ~ "^## " tag "([[:space:]]|$)") found = 1
-              next
-            }
-            found { print }
-          ' CHANGELOG.md)
-          notes="${notes//'%'/'%25'}"
-          notes="${notes//$'\n'/'%0A'}"
-          notes="${notes//$'\r'/'%0D'}"
-          echo "notes=$notes" >> "$GITHUB_OUTPUT"
+          {
+            echo "notes<<__NOTES_EOF__"
+            awk -v tag="${GITHUB_REF#refs/tags/}" '
+              /^## / {
+                if (found) exit
+                if ($0 ~ "^## " tag "([[:space:]]|$)") found = 1
+                next
+              }
+              found { print }
+            ' CHANGELOG.md
+            echo "__NOTES_EOF__"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
