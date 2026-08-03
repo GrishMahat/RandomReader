@@ -1,8 +1,9 @@
 import { LitElement, html } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
-import type { Settings, Source } from '../models';
+import type { Settings, Source, Catalog } from '../models';
 import { DEFAULT_SETTINGS } from '../models';
 import { optionsStyles } from './options.styles';
+import { applyTheme, subscribeToSystemTheme } from '../utils/theme';
 
 interface SettingsResponse {
   success: boolean;
@@ -12,9 +13,21 @@ interface SettingsResponse {
 
 interface GenericResponse {
   success: boolean;
+  fetched?: number;
+  added?: number;
   count?: number;
   error?: string;
   catalog?: unknown;
+}
+
+interface CatalogInfoResponse {
+  success: boolean;
+  mode?: Settings['catalogMode'];
+  catalogUrl?: string;
+  local?: Catalog | null;
+  remote?: Catalog | null;
+  blockedDomains?: string[];
+  error?: string;
 }
 
 interface ImportResponse {
@@ -28,10 +41,40 @@ interface HistoryItem {
   title: string;
   url: string;
   fetchedAt: number;
+  sourceId: string;
+  sourceName?: string;
+  author?: string;
   read: boolean;
 }
 
 type Section = 'general' | 'sources' | 'filters' | 'history' | 'catalog';
+
+interface InterestGroup {
+  label: string;
+  icon: string;
+  tags: string[];
+}
+
+const INTEREST_GROUPS: InterestGroup[] = [
+  { label: 'News & World', icon: '🌍', tags: ['news', 'world', 'politics', 'explainer'] },
+  { label: 'Technology', icon: '💻', tags: ['technology', 'tech', 'gadgets', 'hardware', 'google', 'apple', 'android', 'browsers', 'microsoft', 'windows', 'linux', 'enterprise'] },
+  { label: 'Programming', icon: '👨‍💻', tags: ['programming', 'javascript', 'frontend', 'devtools', 'react', 'css', 'python', 'go', 'rust', 'opensource', 'devops', 'infrastructure', 'cloud', 'containers', 'database', 'software', 'systems'] },
+  { label: 'AI & Future', icon: '🤖', tags: ['ai', 'future', 'innovation'] },
+  { label: 'Science & Space', icon: '🔬', tags: ['science', 'space', 'physics', 'math', 'medicine', 'engineering'] },
+  { label: 'Security & Privacy', icon: '🔒', tags: ['security', 'privacy', 'hacking', 'cybercrime', 'breaches', 'civil-liberties'] },
+  { label: 'Business & Finance', icon: '📈', tags: ['business', 'finance', 'startups', 'economics', 'budget'] },
+  { label: 'Design & Architecture', icon: '🎨', tags: ['design', 'architecture', 'interiors', 'art'] },
+  { label: 'Culture & Entertainment', icon: '🎭', tags: ['culture', 'entertainment', 'movies', 'music', 'tv', 'arts'] },
+  { label: 'Food & Cooking', icon: '🍳', tags: ['food', 'cooking'] },
+  { label: 'Books & Ideas', icon: '📚', tags: ['books', 'literature', 'philosophy', 'ideas', 'essays', 'longform'] },
+  { label: 'History & Curiosities', icon: '🏛️', tags: ['history', 'curiosities', 'trivia', 'stories'] },
+  { label: 'Health & Fitness', icon: '💪', tags: ['health', 'fitness', 'running', 'wellness', 'men'] },
+  { label: 'Travel & Lifestyle', icon: '✈️', tags: ['travel', 'lifestyle'] },
+  { label: 'Gaming & Maker', icon: '🎮', tags: ['gaming', 'pc', 'maker', 'diy', 'electronics'] },
+  { label: 'Humor & Fun', icon: '😄', tags: ['humor', 'satire', 'fun'] },
+  { label: 'Sports', icon: '⚽', tags: ['sports'] },
+  { label: 'Web & Browsers', icon: '🌐', tags: ['web', 'performance', 'browsers'] },
+];
 
 @customElement('random-reader-options')
 export class RandomReaderOptions extends LitElement {
@@ -48,18 +91,35 @@ export class RandomReaderOptions extends LitElement {
   @state() private searchQuery = '';
   @state() private selectedTag = '';
   @state() private historySearch = '';
+  @state() private selectedInterests: string[] = [];
+  @state() private localCatalog: { version: number; updatedAt: string; sources: number } | null = null;
+  @state() private blockedDomains: string[] = [];
+  @state() private newBlockedDomain = '';
+  @state() private toastVisible = false;
+  private toastTimer: number | null = null;
+  private unsubscribeTheme: (() => void) | null = null;
 
   async connectedCallback(): Promise<void> {
     super.connectedCallback();
     await this.loadSettings();
     await this.loadSources();
     await this.loadHistory();
+    await this.loadCatalogInfo();
+    applyTheme(this, this.settings.theme);
+    this.unsubscribeTheme = subscribeToSystemTheme(this, () => this.settings.theme);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.unsubscribeTheme?.();
+    this.unsubscribeTheme = null;
   }
 
   private async loadSettings(): Promise<void> {
     const result = await this.sendMessage<SettingsResponse>({ type: 'GET_SETTINGS' });
     if (result.success && result.settings) {
       this.settings = result.settings;
+      applyTheme(this, this.settings.theme);
     }
   }
 
@@ -67,6 +127,23 @@ export class RandomReaderOptions extends LitElement {
     const result = await this.sendMessage<{ success: boolean; sources?: Source[] }>({ type: 'GET_SOURCES' });
     if (result.success && result.sources) {
       this.sources = result.sources;
+    }
+  }
+
+  private async loadCatalogInfo(): Promise<void> {
+    try {
+      const result = await this.sendMessage<CatalogInfoResponse>({ type: 'GET_CATALOG_INFO' });
+      if (result.success) {
+        if (result.mode) {
+          this.settings = { ...this.settings, catalogMode: result.mode };
+        }
+        this.localCatalog = result.local
+          ? { version: result.local.version, updatedAt: result.local.updatedAt, sources: result.local.sources.length }
+          : null;
+        this.blockedDomains = result.blockedDomains ?? [];
+      }
+    } catch {
+      this.localCatalog = null;
     }
   }
 
@@ -100,6 +177,8 @@ export class RandomReaderOptions extends LitElement {
       const result = await this.sendMessage<ImportResponse>({ type: 'IMPORT_CATALOG', raw: text });
       if (result.success) {
         this.showStatus(`Catalog "${file.name}" imported (${result.catalog?.sources.length ?? 0} sources)`, 'success');
+        await this.loadSettings();
+        await this.loadCatalogInfo();
         await this.loadSources();
       } else {
         this.showStatus(result.error || 'Import failed', 'error');
@@ -149,13 +228,154 @@ export class RandomReaderOptions extends LitElement {
     try {
       const result = await this.sendMessage<GenericResponse>({ type: 'REFRESH_FEEDS' });
       if (result.success) {
-        this.showStatus(`Refreshed: ${result.count || 0} new articles`, 'success');
+        this.showStatus(`Refreshed: ${result.fetched || 0} sources (${result.added || 0} new articles)`, 'success');
       } else {
         this.showStatus(result.error || 'Refresh failed', 'error');
       }
     } catch {
       this.showStatus('Refresh failed', 'error');
     }
+  }
+
+  private async handleCatalogModeChange(e: Event): Promise<void> {
+    const useLocal = (e.target as HTMLInputElement).checked;
+    this.settings = { ...this.settings, catalogMode: useLocal ? 'local' : 'remote' };
+    await this.saveSettings();
+    await this.loadCatalogInfo();
+    await this.loadSources();
+  }
+
+  private async handleAddBlockedDomain(): Promise<void> {
+    const domain = this.newBlockedDomain.trim().toLowerCase();
+    if (!domain || this.blockedDomains.includes(domain)) {
+      this.newBlockedDomain = '';
+      return;
+    }
+    const next = [...this.blockedDomains, domain];
+    const result = await this.sendMessage<{ success: boolean; blockedDomains?: string[]; error?: string }>({
+      type: 'UPDATE_BLOCKED_DOMAINS',
+      domains: next,
+    });
+    if (result.success) {
+      this.blockedDomains = result.blockedDomains ?? next;
+      this.newBlockedDomain = '';
+      this.showStatus(`Blocked ${domain}. New articles from it will be skipped.`, 'success');
+    } else {
+      this.showStatus(result.error || 'Failed to update blocked domains', 'error');
+    }
+  }
+
+  private async handleRemoveBlockedDomain(domain: string): Promise<void> {
+    const next = this.blockedDomains.filter((d) => d !== domain);
+    const result = await this.sendMessage<{ success: boolean; blockedDomains?: string[]; error?: string }>({
+      type: 'UPDATE_BLOCKED_DOMAINS',
+      domains: next,
+    });
+    if (result.success) {
+      this.blockedDomains = result.blockedDomains ?? next;
+      this.showStatus(`Unblocked ${domain}`, 'success');
+    } else {
+      this.showStatus(result.error || 'Failed to update blocked domains', 'error');
+    }
+  }
+
+  private handleThemeChange(e: Event): void {
+    const theme = (e.target as HTMLSelectElement).value as Settings['theme'];
+    this.settings = { ...this.settings, theme };
+    applyTheme(this, theme);
+  }
+
+  private handleSettingChange<K extends keyof Settings>(key: K, value: Settings[K]): void {
+    this.settings = { ...this.settings, [key]: value };
+  }
+
+  private async handleToggleSetting<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void> {
+    this.settings = { ...this.settings, [key]: value };
+    await this.saveSettings();
+  }
+
+  private async handleRestoreDefaults(): Promise<void> {
+    if (!window.confirm('Reset all settings to their defaults? Your catalog, history, and starred articles will be kept.')) return;
+    this.settings = { ...DEFAULT_SETTINGS };
+    await this.saveSettings();
+    applyTheme(this, this.settings.theme);
+    await this.loadCatalogInfo();
+    await this.loadSources();
+  }
+
+  private async handleClearData(): Promise<void> {
+    if (!window.confirm('Clear reading history and all stored articles? Source toggles and settings are kept.')) return;
+    const result = await this.sendMessage<GenericResponse>({ type: 'CLEAR_DATA' });
+    if (result.success) {
+      this.showStatus('Cleared articles and history', 'success');
+      await this.loadHistory();
+    } else {
+      this.showStatus(result.error || 'Failed to clear data', 'error');
+    }
+  }
+
+  private async handleClearHistory(): Promise<void> {
+    if (!window.confirm('Clear your reading history?')) return;
+    const result = await this.sendMessage<GenericResponse>({ type: 'CLEAR_HISTORY' });
+    if (result.success) {
+      this.showStatus('History cleared', 'success');
+      await this.loadHistory();
+    } else {
+      this.showStatus(result.error || 'Failed to clear history', 'error');
+    }
+  }
+
+  private exportHistory(format: 'csv' | 'json'): void {
+    if (this.history.length === 0) return;
+    const rows = this.history.map((h) => ({
+      title: h.title,
+      url: h.url,
+      source: h.sourceName || h.sourceId,
+      author: h.author || '',
+      visitedAt: new Date(h.fetchedAt).toISOString(),
+    }));
+
+    let content: string;
+    let mime: string;
+    let ext: string;
+    if (format === 'csv') {
+      const esc = (v: string): string => `"${String(v ?? '').replace(/"/g, '""')}"`;
+      const header = ['title', 'url', 'source', 'author', 'visitedAt'];
+      content = [
+        header.join(','),
+        ...rows.map((r) => [r.title, r.url, r.source, r.author, r.visitedAt].map(esc).join(',')),
+      ].join('\n');
+      mime = 'text/csv';
+      ext = 'csv';
+    } else {
+      content = JSON.stringify(rows, null, 2);
+      mime = 'application/json';
+      ext = 'json';
+    }
+
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `random-reader-history.${ext}`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private get readingStats(): { total: number; last7: number; topSources: Array<{ name: string; count: number }> } {
+    const total = this.history.length;
+    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const last7 = this.history.filter((h) => h.fetchedAt >= cutoff).length;
+    const bySource = new Map<string, number>();
+    for (const h of this.history) {
+      const name = h.sourceName || h.sourceId;
+      bySource.set(name, (bySource.get(name) ?? 0) + 1);
+    }
+    const topSources = [...bySource.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+    return { total, last7, topSources };
   }
 
   private async handleRefreshCatalog(): Promise<void> {
@@ -176,10 +396,24 @@ export class RandomReaderOptions extends LitElement {
   private showStatus(message: string, type: 'success' | 'error' | 'info'): void {
     this.statusMessage = message;
     this.statusType = type;
+    this.toastVisible = true;
+    if (this.toastTimer !== null) {
+      window.clearTimeout(this.toastTimer);
+    }
+    this.toastTimer = window.setTimeout(() => {
+      this.toastVisible = false;
+      this.statusMessage = '';
+      this.toastTimer = null;
+    }, 3500);
   }
 
   private clearStatus(): void {
     this.statusMessage = '';
+    this.toastVisible = false;
+    if (this.toastTimer !== null) {
+      window.clearTimeout(this.toastTimer);
+      this.toastTimer = null;
+    }
   }
 
   private get availableTags(): string[] {
@@ -219,6 +453,38 @@ export class RandomReaderOptions extends LitElement {
     this.settings = { ...this.settings, excludeTags: next };
   }
 
+  private get onboardingGroups(): InterestGroup[] {
+    const known = new Set(this.availableTags);
+    return INTEREST_GROUPS.filter(g => g.tags.some(t => known.has(t)));
+  }
+
+  private toggleInterest(label: string): void {
+    const selected = this.selectedInterests.includes(label)
+      ? this.selectedInterests.filter(l => l !== label)
+      : [...this.selectedInterests, label];
+    this.selectedInterests = selected;
+  }
+
+  private async finishOnboarding(): Promise<void> {
+    const known = new Set(this.availableTags);
+    const includeTags = new Set<string>();
+    for (const group of this.onboardingGroups) {
+      if (this.selectedInterests.includes(group.label)) {
+        for (const tag of group.tags) {
+          if (known.has(tag)) includeTags.add(tag);
+        }
+      }
+    }
+    this.settings = { ...this.settings, includeTags: [...includeTags], onboarded: true };
+    await this.saveSettings();
+    await this.loadSources();
+  }
+
+  private async skipOnboarding(): Promise<void> {
+    this.settings = { ...this.settings, onboarded: true };
+    await this.saveSettings();
+  }
+
   private formatDate(ts: number): string {
     if (!ts) return '';
     return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
@@ -235,6 +501,7 @@ export class RandomReaderOptions extends LitElement {
   // ─── Section renderers ────────────────────────────────────────────────────
 
   private renderGeneral() {
+    const stats = this.readingStats;
     return html`
       <div class="section-title">General</div>
       <div class="section-desc">Core behavior settings for the extension.</div>
@@ -251,7 +518,7 @@ export class RandomReaderOptions extends LitElement {
               <select
                 id="openIn"
                 .value=${this.settings.openIn}
-                @change=${(e: Event) => { this.settings = { ...this.settings, openIn: (e.target as HTMLSelectElement).value as Settings['openIn'] }; }}
+                @change=${(e: Event) => { this.handleSettingChange('openIn', (e.target as HTMLSelectElement).value as Settings['openIn']); }}
               >
                 <option value="new_tab">New Tab</option>
                 <option value="current_tab">Current Tab</option>
@@ -267,7 +534,7 @@ export class RandomReaderOptions extends LitElement {
               <select
                 id="autoRefreshInterval"
                 .value=${String(this.settings.autoRefreshInterval)}
-                @change=${(e: Event) => { this.settings = { ...this.settings, autoRefreshInterval: Number((e.target as HTMLSelectElement).value) }; }}
+                @change=${(e: Event) => { this.handleSettingChange('autoRefreshInterval', Number((e.target as HTMLSelectElement).value)); }}
               >
                 <option value="1800000">30 minutes</option>
                 <option value="3600000">1 hour</option>
@@ -286,7 +553,7 @@ export class RandomReaderOptions extends LitElement {
             <div class="pref-control">
               <select
                 .value=${this.settings.selectionMode}
-                @change=${(e: Event) => { this.settings = { ...this.settings, selectionMode: (e.target as HTMLSelectElement).value as Settings['selectionMode'] }; }}
+                @change=${(e: Event) => { this.handleSettingChange('selectionMode', (e.target as HTMLSelectElement).value as Settings['selectionMode']); }}
               >
                 <option value="unread_only">Unread Only</option>
                 <option value="all">All Articles</option>
@@ -294,6 +561,87 @@ export class RandomReaderOptions extends LitElement {
               </select>
             </div>
           </div>
+          <div class="pref-row">
+            <div>
+              <div class="pref-label">Refresh on Startup</div>
+              <div class="pref-desc">Fetch a batch of feeds when the browser starts</div>
+            </div>
+            <div class="pref-control">
+              <label class="toggle-label">
+                <input type="checkbox" .checked=${this.settings.refreshOnStartup} @change=${(e: Event) => this.handleToggleSetting('refreshOnStartup', (e.target as HTMLInputElement).checked)} />
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+          <div class="pref-row">
+            <div>
+              <div class="pref-label">Sound Effects</div>
+              <div class="pref-desc">Play a short sound when an article opens</div>
+            </div>
+            <div class="pref-control">
+              <label class="toggle-label">
+                <input type="checkbox" .checked=${this.settings.soundEffects} @change=${(e: Event) => this.handleToggleSetting('soundEffects', (e.target as HTMLInputElement).checked)} />
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Appearance</span></div>
+        <div class="card-body">
+          <div class="pref-row">
+            <div>
+              <div class="pref-label">Theme</div>
+              <div class="pref-desc">Color scheme for the extension UI</div>
+            </div>
+            <div class="pref-control">
+              <select
+                .value=${this.settings.theme}
+                @change=${this.handleThemeChange}
+              >
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Reading Stats</span></div>
+        <div class="card-body">
+          <div class="stat-row">
+            <div class="stat-item"><div class="stat-value">${stats.total}</div><div class="stat-label">Articles read</div></div>
+            <div class="stat-item"><div class="stat-value">${stats.last7}</div><div class="stat-label">Last 7 days</div></div>
+          </div>
+          ${stats.topSources.length > 0
+            ? html`
+                <div class="pref-row" style="border-bottom: none; padding-bottom: 0;">
+                  <div>
+                    <div class="pref-label">Top Sources</div>
+                    <div class="stat-list">
+                      ${stats.topSources.map((s) => html`
+                        <div class="stat-source"><span class="stat-source-name">${s.name}</span><span class="stat-source-count">${s.count}</span></div>
+                      `)}
+                    </div>
+                  </div>
+                </div>
+              `
+            : html`<div class="help-text">Read an article to start building stats.</div>`}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Data</span></div>
+        <div class="card-body">
+          <div class="btn-group">
+            <button class="btn btn-secondary" @click=${this.handleRestoreDefaults}>Restore Defaults</button>
+            <button class="btn btn-secondary btn-danger" @click=${this.handleClearData}>Clear All Data</button>
+          </div>
+          <div class="help-text">Restore defaults resets settings but keeps your catalog and history. Clear All Data removes articles and reading history.</div>
         </div>
       </div>
 
@@ -414,11 +762,27 @@ export class RandomReaderOptions extends LitElement {
           <span class="card-hint">Only roll from selected — leave empty for all</span>
         </div>
         <div class="card-body">
+          <div class="pref-row">
+            <div>
+              <div class="pref-label">Category Match</div>
+              <div class="pref-desc">"Any" rolls sources with at least one selected category; "All" requires every selected category.</div>
+            </div>
+            <div class="pref-control">
+              <select
+                .value=${this.settings.tagMatchMode}
+                @change=${(e: Event) => { this.handleSettingChange('tagMatchMode', (e.target as HTMLSelectElement).value as Settings['tagMatchMode']); }}
+              >
+                <option value="any">Any selected</option>
+                <option value="all">All selected</option>
+              </select>
+            </div>
+          </div>
           ${tags.length > 0
             ? html`
                 <div class="help-text" style="margin-bottom: 10px;">
-                  Click a category to include it. Only articles from sources tagged with
-                  <strong>at least one</strong> selected category will be eligible.
+                  Click a category to include it. ${this.settings.tagMatchMode === 'all'
+                    ? 'Only articles from sources tagged with <strong>all</strong> selected categories will be eligible.'
+                    : 'Only articles from sources tagged with <strong>at least one</strong> selected category will be eligible.'}
                   ${includeTags.length > 0
                     ? html` <button class="clear-link" @click=${() => { this.settings = { ...this.settings, includeTags: [] }; }}>Clear all</button>`
                     : ''}
@@ -485,6 +849,18 @@ export class RandomReaderOptions extends LitElement {
             .value=${this.historySearch}
             @input=${(e: Event) => { this.historySearch = (e.target as HTMLInputElement).value; }}
           />
+          <button class="btn btn-secondary" @click=${this.loadHistory} title="Reload history">
+            Refresh
+          </button>
+          <button class="btn btn-secondary" @click=${() => this.exportHistory('csv')} title="Download history as CSV" ?disabled=${this.history.length === 0}>
+            Export CSV
+          </button>
+          <button class="btn btn-secondary" @click=${() => this.exportHistory('json')} title="Download history as JSON" ?disabled=${this.history.length === 0}>
+            Export JSON
+          </button>
+          <button class="btn btn-secondary btn-danger" @click=${this.handleClearHistory} title="Clear reading history">
+            Clear History
+          </button>
         </div>
 
         ${items.length > 0
@@ -494,6 +870,8 @@ export class RandomReaderOptions extends LitElement {
                   <thead>
                     <tr>
                       <th>Title</th>
+                      <th>Source</th>
+                      <th>Author</th>
                       <th style="width: 120px;">Date Visited</th>
                     </tr>
                   </thead>
@@ -505,6 +883,12 @@ export class RandomReaderOptions extends LitElement {
                             ${item.title || item.url}
                           </a>
                           <div class="source-url">${item.url}</div>
+                        </td>
+                        <td style="color: var(--text-secondary); font-size: 12px; white-space: nowrap;">
+                          ${item.sourceName || '—'}
+                        </td>
+                        <td style="color: var(--text-secondary); font-size: 12px; white-space: nowrap;">
+                          ${item.author || '—'}
                         </td>
                         <td style="color: var(--text-muted); font-size: 12px; white-space: nowrap;">
                           ${this.formatDate(item.fetchedAt)}
@@ -525,9 +909,43 @@ export class RandomReaderOptions extends LitElement {
   }
 
   private renderCatalog() {
+    const useLocal = this.settings.catalogMode === 'local';
     return html`
       <div class="section-title">Catalog</div>
-      <div class="section-desc">The catalog is fetched from the default online URL and auto-updates every 6 hours. Import a local catalog file or point to your own URL to take control.</div>
+      <div class="section-desc">Choose where the source catalog comes from: the default online URL or a locally imported file. The active catalog auto-updates and preserves your source toggles.</div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Catalog Source</span></div>
+        <div class="card-body">
+          <div class="pref-row">
+            <div>
+              <div class="pref-label">Use Local Catalog</div>
+              <div class="pref-desc">When on, articles come from your imported catalog file instead of the online URL.</div>
+            </div>
+            <div class="pref-control">
+              <label class="toggle-label">
+                <input type="checkbox" .checked=${useLocal} @change=${this.handleCatalogModeChange} />
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+          ${this.localCatalog
+            ? html`
+                <div class="pref-row" style="border-bottom: none; padding-bottom: 0;">
+                  <div class="help-text">
+                    Local catalog: version ${this.localCatalog.version} · ${this.localCatalog.sources} sources · updated ${this.formatDate(new Date(this.localCatalog.updatedAt).getTime())}
+                  </div>
+                </div>
+              `
+            : useLocal
+              ? html`
+                  <div class="pref-row" style="border-bottom: none; padding-bottom: 0;">
+                    <div class="help-text" style="color: var(--danger);">No local catalog imported yet — importing a file below enables it automatically.</div>
+                  </div>
+                `
+              : ''}
+        </div>
+      </div>
 
       <div class="card">
         <div class="card-header"><span class="card-title">Import Catalog File</span></div>
@@ -547,6 +965,37 @@ export class RandomReaderOptions extends LitElement {
       </div>
 
       <div class="card">
+        <div class="card-header"><span class="card-title">Blocked Domains</span></div>
+        <div class="card-body">
+          <div class="help-text" style="margin-bottom: 10px;">
+            Articles from these domains are never shown, no matter which source they come from (e.g. getbor.dev).
+          </div>
+          <div class="blocked-domain-input">
+            <input
+              type="text"
+              placeholder="example.com"
+              .value=${this.newBlockedDomain}
+              @input=${(e: Event) => { this.newBlockedDomain = (e.target as HTMLInputElement).value; }}
+              @keydown=${(e: KeyboardEvent) => { if (e.key === 'Enter') void this.handleAddBlockedDomain(); }}
+            />
+            <button class="btn btn-secondary" @click=${this.handleAddBlockedDomain}>Add</button>
+          </div>
+          ${this.blockedDomains.length > 0
+            ? html`
+                <div class="tag-group" style="margin-top: 12px;">
+                  ${this.blockedDomains.map(domain => html`
+                    <span class="tag-chip blocked-domain-chip">
+                      ${domain}
+                      <button class="chip-remove" @click=${() => this.handleRemoveBlockedDomain(domain)} title="Remove">×</button>
+                    </span>
+                  `)}
+                </div>
+              `
+            : html`<div class="help-text" style="margin-top: 10px;">No domains blocked.</div>`}
+        </div>
+      </div>
+
+      <div class="card">
         <div class="card-header"><span class="card-title">Remote Catalog URL</span></div>
         <div class="card-body">
           <div class="field">
@@ -555,14 +1004,74 @@ export class RandomReaderOptions extends LitElement {
               type="url"
               id="catalogUrl"
               .value=${this.settings.catalogUrl}
+              ?disabled=${useLocal}
               @input=${(e: Event) => { this.settings = { ...this.settings, catalogUrl: (e.target as HTMLInputElement).value }; }}
               placeholder="https://raw.githubusercontent.com/.../catalog.json"
             />
-            <div class="help-text">Leave empty to disable auto-updates. Changes to the online catalog are applied on the next check, preserving your source toggles.</div>
+            <div class="help-text">Used when the local catalog toggle is off. Changes to the online catalog are applied on the next check, preserving your source toggles.</div>
           </div>
           <div class="btn-group">
-            <button class="btn btn-secondary" @click=${this.handleRefreshCatalog}>Sync Catalog</button>
+            <button class="btn btn-secondary" ?disabled=${useLocal} @click=${this.handleRefreshCatalog}>Sync Catalog</button>
             <button class="btn btn-secondary" @click=${this.handleRefreshNow}>Refresh Feeds Now</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ─── Onboarding render ────────────────────────────────────────────────────
+
+  private renderOnboarding() {
+    const groups = this.onboardingGroups;
+    const selectedCount = this.selectedInterests.length;
+
+    return html`
+      <div class="onboarding">
+        <div class="onboard-card">
+          <div class="onboard-hero">
+            <img src=${new URL('../../src/icons/icon-32.png', import.meta.url).href} alt="" width="56" height="56" class="onboard-logo" />
+            <h1>Welcome to Random Reader</h1>
+            <p class="onboard-sub">
+              Pick what you're into and we'll roll articles from those topics. You can change this anytime in Settings.
+            </p>
+          </div>
+
+          <div class="onboard-section">
+            <div class="onboard-section-label">Your Interests</div>
+            ${groups.length > 0
+              ? html`
+                  <div class="onboard-grid">
+                    ${groups.map(group => {
+                      const active = this.selectedInterests.includes(group.label);
+                      return html`
+                        <button
+                          class="interest-chip ${active ? 'selected' : ''}"
+                          @click=${() => this.toggleInterest(group.label)}
+                        >
+                          <span class="interest-icon">${group.icon}</span>
+                          <span class="interest-label">${group.label}</span>
+                          ${active ? html`<span class="interest-check">✓</span>` : ''}
+                        </button>
+                      `;
+                    })}
+                  </div>
+                `
+              : html`<div class="empty-state" style="padding: 16px 0;">No catalog loaded yet. Feeds are refreshing — you can pick interests after sources are ready.</div>`}
+          </div>
+
+          <div class="onboard-footer">
+            <button class="onboard-skip" @click=${this.skipOnboarding}>Skip for now</button>
+            <button
+              class="btn btn-primary onboard-start"
+              @click=${this.finishOnboarding}
+              ?disabled=${groups.length === 0 || this.saving}
+            >
+              ${this.saving
+                ? html`<span class="spinner"></span> Saving...`
+                : selectedCount > 0
+                  ? `Start Reading (${selectedCount} selected)`
+                  : 'Start Reading'}
+            </button>
           </div>
         </div>
       </div>
@@ -572,6 +1081,10 @@ export class RandomReaderOptions extends LitElement {
   // ─── Root render ──────────────────────────────────────────────────────────
 
   render() {
+    if (!this.settings.onboarded) {
+      return this.renderOnboarding();
+    }
+
     const navItems: { id: Section; label: string; icon: string; badge?: string }[] = [
       { id: 'general',   label: 'General',   icon: '⚙️' },
       { id: 'sources',   label: 'Sources',   icon: '📡', badge: String(this.sources.length) },
@@ -608,10 +1121,6 @@ export class RandomReaderOptions extends LitElement {
 
         <!-- Main content -->
         <main class="main-content">
-          ${this.statusMessage
-            ? html`<div class="status-banner ${this.statusType}">${this.statusMessage}</div>`
-            : ''}
-
           ${this.activeSection === 'general'  ? this.renderGeneral()  : ''}
           ${this.activeSection === 'sources'  ? this.renderSources()  : ''}
           ${this.activeSection === 'filters'  ? this.renderFilters()  : ''}
@@ -619,6 +1128,13 @@ export class RandomReaderOptions extends LitElement {
           ${this.activeSection === 'catalog'  ? this.renderCatalog()  : ''}
         </main>
       </div>
+
+      ${this.toastVisible && this.statusMessage
+        ? html`<div class="toast ${this.statusType}" role="status">
+            <span class="toast-message">${this.statusMessage}</span>
+            <button class="toast-close" @click=${this.clearStatus} aria-label="Dismiss">×</button>
+          </div>`
+        : ''}
     `;
   }
 }

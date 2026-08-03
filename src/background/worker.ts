@@ -1,7 +1,9 @@
-import { refreshCatalog, updateCatalogIfNewer, getSettings, setSettings, getCatalog, setCatalog, importCatalogFromJson } from './catalog';
-import { refreshFeeds, clearOldArticles } from './feeds';
+import { refreshCatalog, updateCatalogIfNewer, getSettings, setSettings, getCatalog, setActiveCatalog, importCatalogFromJson, getStoredCatalog, getLocalCatalog } from './catalog';
+import { refreshRandomBatch, clearOldArticles, getArticles, toggleStarred } from './feeds';
 import { handleOpenRandom, handleGetRandom } from './random';
-import type { Settings } from '../models';
+import { getReadHistory } from './storage';
+import { normalizeDomain } from '../utils';
+import type { Article, Settings } from '../models';
 
 const ALARM_REFRESH = 'refresh-feeds';
 const ALARM_CLEANUP = 'cleanup-old-articles';
@@ -9,15 +11,25 @@ const ALARM_CATALOG = 'update-catalog';
 
 const CATALOG_UPDATE_INTERVAL_MINUTES = 6 * 60;
 
-chrome.runtime.onInstalled.addListener(async () => {
+chrome.runtime.onInstalled.addListener(async (details) => {
   await refreshCatalog();
-  await refreshFeeds();
+  await refreshRandomBatch(20);
   await scheduleAlarmsFromSettings();
+
+  if (details.reason === 'install') {
+    const settings = await getSettings();
+    if (!settings.onboarded) {
+      chrome.runtime.openOptionsPage();
+    }
+  }
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   await refreshCatalog();
-  await refreshFeeds();
+  const settings = await getSettings();
+  if (settings.refreshOnStartup) {
+    await refreshRandomBatch(20);
+  }
   await scheduleAlarmsFromSettings();
 });
 
@@ -39,7 +51,7 @@ chrome.alarms.onAlarm.addListener(async (alarm: Alarm) => {
   switch (alarm.name) {
     case ALARM_REFRESH:
       await refreshCatalog();
-      await refreshFeeds();
+      await refreshRandomBatch(10);
       await scheduleAlarmsFromSettings();
       break;
     case ALARM_CATALOG:
@@ -57,6 +69,9 @@ interface Message {
   settings?: Partial<Settings>;
   sourceId?: string;
   raw?: string;
+  article?: Article;
+  starred?: boolean;
+  domains?: string[];
 }
 
 interface MessageSender {
@@ -85,8 +100,8 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender: MessageSender, 
           break;
         }
         case 'REFRESH_FEEDS': {
-          const count = await refreshFeeds();
-          sendResponse({ success: true, count });
+          const result = await refreshRandomBatch(10);
+          sendResponse({ success: true, fetched: result.fetched, added: result.added });
           break;
         }
         case 'REFRESH_CATALOG': {
@@ -97,6 +112,25 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender: MessageSender, 
         case 'IMPORT_CATALOG': {
           const result = await importCatalogFromJson(msg.raw ?? '');
           sendResponse({ success: result.ok, ...(result.ok ? { catalog: result.catalog } : { error: result.error }) });
+          break;
+        }
+        case 'GET_CATALOG_INFO': {
+          const settings = await getSettings();
+          const local = await getLocalCatalog();
+          const remote = await getStoredCatalog();
+          const active = await getCatalog();
+          sendResponse({ success: true, mode: settings.catalogMode, catalogUrl: settings.catalogUrl, local, remote, blockedDomains: active?.blockedDomains ?? [] });
+          break;
+        }
+        case 'UPDATE_BLOCKED_DOMAINS': {
+          const catalog = await getCatalog();
+          if (!catalog) {
+            sendResponse({ success: false, error: 'No catalog loaded' });
+            break;
+          }
+          const normalized = [...new Set((msg.domains ?? []).map(normalizeDomain).filter(Boolean))];
+          await setActiveCatalog({ ...catalog, blockedDomains: normalized });
+          sendResponse({ success: true, blockedDomains: normalized });
           break;
         }
         case 'GET_SETTINGS': {
@@ -121,7 +155,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender: MessageSender, 
             const source = catalog.sources.find((s) => s.id === msg.sourceId);
             if (source) {
               source.enabled = !source.enabled;
-              await setCatalog(catalog);
+              await setActiveCatalog(catalog);
               sendResponse({ success: true, sources: catalog.sources });
             } else {
               sendResponse({ success: false, error: 'Source not found' });
@@ -131,17 +165,43 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender: MessageSender, 
           }
           break;
         }
+        case 'TOGGLE_STAR': {
+          if (msg.article) {
+            const starred = await toggleStarred(msg.article, msg.starred);
+            sendResponse({ success: true, starred });
+          } else {
+            sendResponse({ success: false, error: 'No article' });
+          }
+          break;
+        }
         case 'GET_ARTICLES': {
-          const { getArticles } = await import('./feeds');
           const articles = await getArticles();
           sendResponse({ success: true, articles });
           break;
         }
         case 'GET_HISTORY': {
-          const { getArticles } = await import('./feeds');
-          const articles = await getArticles();
-          const history = articles.filter(a => a.read).sort((a, b) => (b.fetchedAt || 0) - (a.fetchedAt || 0));
-          sendResponse({ success: true, history });
+          const history = await getReadHistory();
+          const mapped = history.map((h) => ({
+            id: h.id,
+            title: h.title,
+            url: h.url,
+            fetchedAt: h.openedAt,
+            sourceId: h.sourceId,
+            sourceName: h.sourceName,
+            author: h.author,
+            read: true,
+          }));
+          sendResponse({ success: true, history: mapped });
+          break;
+        }
+        case 'CLEAR_HISTORY': {
+          await chrome.storage.local.remove('readHistory');
+          sendResponse({ success: true });
+          break;
+        }
+        case 'CLEAR_DATA': {
+          await chrome.storage.local.remove(['readHistory', 'starred', 'articles']);
+          sendResponse({ success: true });
           break;
         }
         default:

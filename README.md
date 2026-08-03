@@ -84,7 +84,7 @@ Runs the Vite dev server with CRXJS hot-reload.
 
 ### Catalog
 
-Sources live in `catalog.json` (repo root) and are also published to a [public gist](https://gist.github.com/GrishMahat/bbe566d031b9847e8e83a367a5838253) that serves as the default remote `catalogUrl` — so every user shares the same curated list. Each source has:
+Sources live in `catalog.json` (repo root) and are served from the repo itself (`https://raw.githubusercontent.com/GrishMahat/RandomReader/refs/heads/main/catalog.json`) as the default remote `catalogUrl` — so every user shares the same curated list. Each source has:
 
 ```json
 {

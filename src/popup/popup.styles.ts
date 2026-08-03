@@ -181,6 +181,37 @@ export const popupStyles = css`
     gap: 6px;
   }
 
+  .panel-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 2px 6px;
+  }
+
+  .panel-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .btn-mini {
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: border-color 0.1s, color 0.1s;
+  }
+
+  .btn-mini:hover {
+    border-color: var(--accent);
+    color: var(--text-primary);
+  }
+
   .opt-card {
     display: flex;
     align-items: center;
@@ -279,6 +310,45 @@ export const popupStyles = css`
     color: var(--text-secondary);
   }
 
+  .onboard-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 10px 12px 0;
+    padding: 9px 12px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+  }
+
+  .onboard-banner-text {
+    display: flex;
+    flex-direction: column;
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.35;
+  }
+
+  .onboard-banner-text strong {
+    font-size: 12px;
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+
+  .onboard-banner-btn {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 600;
+    font-family: inherit;
+    color: #fff;
+    background: var(--accent, #171717);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
   .status-pill.success {
     background: var(--success-bg);
     border-color: #bbf7d0;
@@ -340,7 +410,7 @@ export const popupStyles = css`
   }
 
   @media (prefers-color-scheme: dark) {
-    :host {
+    :host([data-theme='system']) {
       --bg: #1a1a1a;
       --surface: #242424;
       --surface-hover: #2e2e2e;
@@ -356,5 +426,22 @@ export const popupStyles = css`
       --error-text: #f87171;
       --error-bg: rgba(248, 113, 113, 0.08);
     }
+  }
+
+  :host([data-theme='dark']) {
+    --bg: #1a1a1a;
+    --surface: #242424;
+    --surface-hover: #2e2e2e;
+    --border: #3a3a3a;
+    --text-primary: #e5e5e5;
+    --text-secondary: #a3a3a3;
+    --text-muted: #6b6b6b;
+    --accent: #e5e5e5;
+    --accent-hover: #ffffff;
+    --accent-text: #1a1a1a;
+    --success-text: #4ade80;
+    --success-bg: rgba(74, 222, 128, 0.08);
+    --error-text: #f87171;
+    --error-bg: rgba(248, 113, 113, 0.08);
   }
 `;

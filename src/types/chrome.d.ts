@@ -10,7 +10,7 @@ interface ChromeAlarms {
 }
 
 interface ChromeRuntime {
-  onInstalled: { addListener: (callback: () => void) => void };
+  onInstalled: { addListener: (callback: (details: { reason: 'install' | 'update' | 'chrome_update' | 'shared_module_update'; previousVersion?: string }) => void) => void };
   onStartup: { addListener: (callback: () => void) => void };
   onMessage: { addListener: (callback: (message: unknown, sender: MessageSender, sendResponse: (response: unknown) => void) => boolean | void) => void };
   sendMessage(message: unknown, options?: { includeTlsChannelId?: boolean; toProxyScript?: boolean }): Promise<unknown>;

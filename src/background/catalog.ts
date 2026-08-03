@@ -4,12 +4,34 @@ import { fetchWithTimeout, getErrorMessage } from '../utils';
 
 const CATALOG_KEY = 'catalog';
 const CATALOG_VERSION_KEY = 'catalogVersion';
+const LOCAL_CATALOG_KEY = 'localCatalog';
 const SETTINGS_KEY = 'settings';
 
-export async function getCatalog(): Promise<Catalog | null> {
+/** Remote (URL-fetched) catalog stored for the "remote" mode. */
+export async function getStoredCatalog(): Promise<Catalog | null> {
   const result = await chrome.storage.local.get([CATALOG_KEY, CATALOG_VERSION_KEY]) as Record<string, unknown>;
   const catalog = result[CATALOG_KEY] as Catalog | undefined;
   return catalog ?? null;
+}
+
+/** Catalog imported from a local file, used in "local" mode. */
+export async function getLocalCatalog(): Promise<Catalog | null> {
+  const result = await chrome.storage.local.get(LOCAL_CATALOG_KEY) as Record<string, unknown>;
+  const catalog = result[LOCAL_CATALOG_KEY] as Catalog | undefined;
+  return catalog ?? null;
+}
+
+/**
+ * The catalog that is currently active for the user: the imported local
+ * catalog in "local" mode (falling back to the remote one if none was
+ * imported yet), otherwise the remote catalog.
+ */
+export async function getCatalog(): Promise<Catalog | null> {
+  const settings = await getSettings();
+  if (settings.catalogMode === 'local') {
+    return (await getLocalCatalog()) ?? (await getStoredCatalog());
+  }
+  return getStoredCatalog();
 }
 
 export async function getCatalogVersion(): Promise<number> {
@@ -22,6 +44,20 @@ export async function setCatalog(catalog: Catalog): Promise<void> {
     [CATALOG_KEY]: catalog,
     [CATALOG_VERSION_KEY]: catalog.version,
   });
+}
+
+export async function setLocalCatalog(catalog: Catalog): Promise<void> {
+  await chrome.storage.local.set({ [LOCAL_CATALOG_KEY]: catalog });
+}
+
+/** Persist a catalog to the storage key that matches the current mode. */
+export async function setActiveCatalog(catalog: Catalog): Promise<void> {
+  const settings = await getSettings();
+  if (settings.catalogMode === 'local') {
+    await setLocalCatalog(catalog);
+  } else {
+    await setCatalog(catalog);
+  }
 }
 
 export async function getSettings(): Promise<Settings> {
@@ -77,7 +113,8 @@ export function validateCatalogJson(raw: string): { ok: true; catalog: Catalog }
 export async function importCatalogFromJson(raw: string): Promise<{ ok: true; catalog: Catalog } | { ok: false; error: string }> {
   const result = validateCatalogJson(raw);
   if (!result.ok) return result;
-  await setCatalog(result.catalog);
+  await setLocalCatalog(result.catalog);
+  await setSettings({ catalogMode: 'local' });
   return result;
 }
 
@@ -93,11 +130,18 @@ function mergeCatalogWithToggles(remote: Catalog, local: Catalog | null): Catalo
     ...s,
     enabled: enabledById.has(s.id) ? enabledById.get(s.id)! : s.enabled,
   }));
-  return { ...remote, sources };
+  // Keep user-added blocked domains across remote catalog updates.
+  const blockedDomains = [...new Set([...(remote.blockedDomains ?? []), ...(local.blockedDomains ?? [])])];
+  return { ...remote, sources, blockedDomains };
 }
 
 export async function refreshCatalog(): Promise<Catalog | null> {
   const settings = await getSettings();
+
+  // In local mode never touch the remote catalog — the imported file is the source of truth.
+  if (settings.catalogMode === 'local') {
+    return getCatalog();
+  }
 
   if (!settings.catalogUrl) {
     return getCatalog();
@@ -106,7 +150,7 @@ export async function refreshCatalog(): Promise<Catalog | null> {
   const remote = await fetchAndValidateCatalog(settings.catalogUrl);
   if (!remote) return getCatalog();
 
-  const local = await getCatalog();
+  const local = await getStoredCatalog();
   const merged = mergeCatalogWithToggles(remote, local);
   await setCatalog(merged);
   return merged;
@@ -118,6 +162,10 @@ export async function refreshCatalog(): Promise<Catalog | null> {
  */
 export async function updateCatalogIfNewer(): Promise<{ updated: boolean; catalog: Catalog | null }> {
   const settings = await getSettings();
+
+  if (settings.catalogMode === 'local') {
+    return { updated: false, catalog: await getCatalog() };
+  }
 
   if (!settings.catalogUrl) {
     return { updated: false, catalog: await getCatalog() };
@@ -133,7 +181,7 @@ export async function updateCatalogIfNewer(): Promise<{ updated: boolean; catalo
     return { updated: false, catalog: await getCatalog() };
   }
 
-  const local = await getCatalog();
+  const local = await getStoredCatalog();
   const merged = mergeCatalogWithToggles(remote, local);
   await setCatalog(merged);
   return { updated: true, catalog: merged };

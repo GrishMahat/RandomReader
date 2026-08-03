@@ -1,6 +1,7 @@
 {
-  "version": 2,
-  "updatedAt": "2026-08-02T12:00:00Z",
+  "version": 1,
+  "updatedAt": "2026-08-03T02:00:00Z",
+  "blockedDomains": [],
   "sources": [
     {
       "id": "hn-frontpage",
@@ -9,7 +10,11 @@
       "url": "https://news.ycombinator.com/rss",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "tech", "news"]
+      "tags": [
+        "technology",
+        "tech",
+        "news"
+      ]
     },
     {
       "id": "lobsters",
@@ -18,7 +23,11 @@
       "url": "https://lobste.rs/rss",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "tech", "programming"]
+      "tags": [
+        "technology",
+        "tech",
+        "programming"
+      ]
     },
     {
       "id": "mozilla-hacks",
@@ -27,7 +36,10 @@
       "url": "https://hacks.mozilla.org/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["web", "browsers"]
+      "tags": [
+        "web",
+        "browsers"
+      ]
     },
     {
       "id": "smashing-magazine",
@@ -36,7 +48,10 @@
       "url": "https://www.smashingmagazine.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["web", "design"]
+      "tags": [
+        "web",
+        "design"
+      ]
     },
     {
       "id": "css-tricks",
@@ -45,7 +60,11 @@
       "url": "https://css-tricks.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["web", "css", "design"]
+      "tags": [
+        "web",
+        "css",
+        "design"
+      ]
     },
     {
       "id": "dev-to",
@@ -54,16 +73,25 @@
       "url": "https://dev.to/feed",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "programming", "tech"]
+      "tags": [
+        "technology",
+        "programming",
+        "tech"
+      ]
     },
     {
       "id": "the-verge",
       "name": "The Verge",
-      "type": "rss",
+      "type": "atom",
       "url": "https://www.theverge.com/rss/index.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "tech", "news", "gadgets"]
+      "tags": [
+        "technology",
+        "tech",
+        "news",
+        "gadgets"
+      ]
     },
     {
       "id": "ars-technica",
@@ -72,7 +100,11 @@
       "url": "https://feeds.arstechnica.com/arstechnica/index",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "tech", "news"]
+      "tags": [
+        "technology",
+        "tech",
+        "news"
+      ]
     },
     {
       "id": "ars-technica-science",
@@ -81,7 +113,10 @@
       "url": "https://feeds.arstechnica.com/arstechnica/science",
       "language": "en",
       "enabled": true,
-      "tags": ["science", "technology"]
+      "tags": [
+        "science",
+        "technology"
+      ]
     },
     {
       "id": "engadget",
@@ -90,7 +125,11 @@
       "url": "https://www.engadget.com/rss.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "gadgets", "news"]
+      "tags": [
+        "technology",
+        "gadgets",
+        "news"
+      ]
     },
     {
       "id": "techcrunch",
@@ -99,7 +138,12 @@
       "url": "https://techcrunch.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "tech", "news", "startups"]
+      "tags": [
+        "technology",
+        "tech",
+        "news",
+        "startups"
+      ]
     },
     {
       "id": "wired",
@@ -108,7 +152,11 @@
       "url": "https://www.wired.com/feed/rss",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "tech", "news"]
+      "tags": [
+        "technology",
+        "tech",
+        "news"
+      ]
     },
     {
       "id": "gizmodo",
@@ -117,7 +165,11 @@
       "url": "https://gizmodo.com/rss",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "gadgets", "news"]
+      "tags": [
+        "technology",
+        "gadgets",
+        "news"
+      ]
     },
     {
       "id": "venturebeat",
@@ -126,16 +178,26 @@
       "url": "https://venturebeat.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "tech", "ai", "news"]
+      "tags": [
+        "technology",
+        "tech",
+        "ai",
+        "news"
+      ]
     },
     {
       "id": "the-register",
       "name": "The Register",
-      "type": "atom",
+      "type": "rss",
       "url": "https://www.theregister.com/headlines.atom",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "tech", "news", "enterprise"]
+      "tags": [
+        "technology",
+        "tech",
+        "news",
+        "enterprise"
+      ]
     },
     {
       "id": "howtogeek",
@@ -144,7 +206,11 @@
       "url": "https://www.howtogeek.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "howto", "windows"]
+      "tags": [
+        "technology",
+        "howto",
+        "windows"
+      ]
     },
     {
       "id": "9to5mac",
@@ -153,7 +219,11 @@
       "url": "https://9to5mac.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["apple", "technology", "news"]
+      "tags": [
+        "apple",
+        "technology",
+        "news"
+      ]
     },
     {
       "id": "9to5google",
@@ -162,7 +232,12 @@
       "url": "https://9to5google.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["google", "android", "technology", "news"]
+      "tags": [
+        "google",
+        "android",
+        "technology",
+        "news"
+      ]
     },
     {
       "id": "android-police",
@@ -171,7 +246,11 @@
       "url": "https://www.androidpolice.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["android", "google", "technology"]
+      "tags": [
+        "android",
+        "google",
+        "technology"
+      ]
     },
     {
       "id": "phoronix",
@@ -180,16 +259,11 @@
       "url": "https://www.phoronix.com/rss.php",
       "language": "en",
       "enabled": true,
-      "tags": ["linux", "hardware", "performance"]
-    },
-    {
-      "id": "thenextweb",
-      "name": "TNW",
-      "type": "rss",
-      "url": "https://thenextweb.com/feed/",
-      "language": "en",
-      "enabled": true,
-      "tags": ["technology", "tech", "news"]
+      "tags": [
+        "linux",
+        "hardware",
+        "performance"
+      ]
     },
     {
       "id": "betanews",
@@ -198,7 +272,11 @@
       "url": "https://betanews.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "software", "news"]
+      "tags": [
+        "technology",
+        "software",
+        "news"
+      ]
     },
     {
       "id": "bbc-news",
@@ -207,7 +285,9 @@
       "url": "https://feeds.bbci.co.uk/news/rss.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["news"]
+      "tags": [
+        "news"
+      ]
     },
     {
       "id": "the-guardian",
@@ -216,7 +296,10 @@
       "url": "https://www.theguardian.com/world/rss",
       "language": "en",
       "enabled": true,
-      "tags": ["news", "world"]
+      "tags": [
+        "news",
+        "world"
+      ]
     },
     {
       "id": "npr",
@@ -225,34 +308,22 @@
       "url": "https://feeds.npr.org/1001/rss.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["news"]
-    },
-    {
-      "id": "nytimes",
-      "name": "The New York Times",
-      "type": "rss",
-      "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
-      "language": "en",
-      "enabled": true,
-      "tags": ["news"]
-    },
-    {
-      "id": "washington-post",
-      "name": "Washington Post",
-      "type": "rss",
-      "url": "https://feeds.washingtonpost.com/rss/world",
-      "language": "en",
-      "enabled": true,
-      "tags": ["news", "world"]
+      "tags": [
+        "news"
+      ]
     },
     {
       "id": "cnet",
       "name": "CNET",
-      "type": "rss",
+      "type": "atom",
       "url": "https://www.cnet.com/rss/news/",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "news", "gadgets"]
+      "tags": [
+        "technology",
+        "news",
+        "gadgets"
+      ]
     },
     {
       "id": "pc-world",
@@ -261,7 +332,11 @@
       "url": "https://www.pcworld.com/index.rss",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "pc", "hardware"]
+      "tags": [
+        "technology",
+        "pc",
+        "hardware"
+      ]
     },
     {
       "id": "toms-hardware",
@@ -270,7 +345,11 @@
       "url": "https://www.tomshardware.com/feeds/all",
       "language": "en",
       "enabled": true,
-      "tags": ["hardware", "technology", "pc"]
+      "tags": [
+        "hardware",
+        "technology",
+        "pc"
+      ]
     },
     {
       "id": "zdnet",
@@ -279,7 +358,11 @@
       "url": "https://www.zdnet.com/news/rss.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "enterprise", "news"]
+      "tags": [
+        "technology",
+        "enterprise",
+        "news"
+      ]
     },
     {
       "id": "hackernoon",
@@ -288,7 +371,11 @@
       "url": "https://hackernoon.com/feed",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "programming", "tech"]
+      "tags": [
+        "technology",
+        "programming",
+        "tech"
+      ]
     },
     {
       "id": "julia-evans",
@@ -297,7 +384,10 @@
       "url": "https://jvns.ca/atom.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "systems"]
+      "tags": [
+        "programming",
+        "systems"
+      ]
     },
     {
       "id": "overreacted",
@@ -306,7 +396,10 @@
       "url": "https://overreacted.io/rss.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "javascript"]
+      "tags": [
+        "programming",
+        "javascript"
+      ]
     },
     {
       "id": "coding-horror",
@@ -315,7 +408,10 @@
       "url": "https://blog.codinghorror.com/rss/",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "software"]
+      "tags": [
+        "programming",
+        "software"
+      ]
     },
     {
       "id": "freecodecamp",
@@ -324,7 +420,11 @@
       "url": "https://www.freecodecamp.org/news/rss/",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "web", "education"]
+      "tags": [
+        "programming",
+        "web",
+        "education"
+      ]
     },
     {
       "id": "github-blog",
@@ -333,7 +433,11 @@
       "url": "https://github.blog/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "devtools", "opensource"]
+      "tags": [
+        "programming",
+        "devtools",
+        "opensource"
+      ]
     },
     {
       "id": "web-dev",
@@ -342,7 +446,11 @@
       "url": "https://web.dev/feed.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["web", "performance", "javascript"]
+      "tags": [
+        "web",
+        "performance",
+        "javascript"
+      ]
     },
     {
       "id": "mozilla-blog",
@@ -351,7 +459,11 @@
       "url": "https://blog.mozilla.org/en/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["web", "privacy", "browsers"]
+      "tags": [
+        "web",
+        "privacy",
+        "browsers"
+      ]
     },
     {
       "id": "a-list-apart",
@@ -360,7 +472,11 @@
       "url": "https://alistapart.com/main/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["web", "design", "frontend"]
+      "tags": [
+        "web",
+        "design",
+        "frontend"
+      ]
     },
     {
       "id": "javascript-weekly",
@@ -369,7 +485,10 @@
       "url": "https://javascriptweekly.com/rss",
       "language": "en",
       "enabled": true,
-      "tags": ["javascript", "programming"]
+      "tags": [
+        "javascript",
+        "programming"
+      ]
     },
     {
       "id": "react-status",
@@ -378,16 +497,24 @@
       "url": "https://react.statuscode.com/rss",
       "language": "en",
       "enabled": true,
-      "tags": ["javascript", "react", "programming"]
+      "tags": [
+        "javascript",
+        "react",
+        "programming"
+      ]
     },
     {
       "id": "rust-blog",
       "name": "Rust Blog",
-      "type": "rss",
+      "type": "atom",
       "url": "https://blog.rust-lang.org/feed.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "rust", "systems"]
+      "tags": [
+        "programming",
+        "rust",
+        "systems"
+      ]
     },
     {
       "id": "golang-blog",
@@ -396,16 +523,22 @@
       "url": "https://go.dev/blog/feed.atom",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "go"]
+      "tags": [
+        "programming",
+        "go"
+      ]
     },
     {
       "id": "python-blog",
       "name": "Python Blog",
-      "type": "atom",
+      "type": "rss",
       "url": "https://blog.python.org/feeds/posts/default",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "python"]
+      "tags": [
+        "programming",
+        "python"
+      ]
     },
     {
       "id": "kubernetes-blog",
@@ -414,7 +547,11 @@
       "url": "https://kubernetes.io/feed.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["devops", "containers", "programming"]
+      "tags": [
+        "devops",
+        "containers",
+        "programming"
+      ]
     },
     {
       "id": "cloudflare-blog",
@@ -423,7 +560,11 @@
       "url": "https://blog.cloudflare.com/rss/",
       "language": "en",
       "enabled": true,
-      "tags": ["web", "security", "infrastructure"]
+      "tags": [
+        "web",
+        "security",
+        "infrastructure"
+      ]
     },
     {
       "id": "docker-blog",
@@ -432,7 +573,10 @@
       "url": "https://www.docker.com/blog/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["devops", "containers"]
+      "tags": [
+        "devops",
+        "containers"
+      ]
     },
     {
       "id": "microsoft-devblogs",
@@ -441,7 +585,11 @@
       "url": "https://devblogs.microsoft.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "microsoft", "devtools"]
+      "tags": [
+        "programming",
+        "microsoft",
+        "devtools"
+      ]
     },
     {
       "id": "jetbrains-blog",
@@ -450,16 +598,23 @@
       "url": "https://blog.jetbrains.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["programming", "devtools"]
+      "tags": [
+        "programming",
+        "devtools"
+      ]
     },
     {
       "id": "digitalocean-blog",
       "name": "DigitalOcean Blog",
-      "type": "rss",
+      "type": "atom",
       "url": "https://www.digitalocean.com/blog/rss",
       "language": "en",
       "enabled": true,
-      "tags": ["devops", "cloud", "programming"]
+      "tags": [
+        "devops",
+        "cloud",
+        "programming"
+      ]
     },
     {
       "id": "logrocket-blog",
@@ -468,16 +623,24 @@
       "url": "https://blog.logrocket.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["javascript", "react", "programming"]
+      "tags": [
+        "javascript",
+        "react",
+        "programming"
+      ]
     },
     {
       "id": "vercel-blog",
       "name": "Vercel Blog",
-      "type": "rss",
+      "type": "atom",
       "url": "https://vercel.com/blog/rss.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["web", "frontend", "devtools"]
+      "tags": [
+        "web",
+        "frontend",
+        "devtools"
+      ]
     },
     {
       "id": "vite-blog",
@@ -486,7 +649,11 @@
       "url": "https://vitejs.dev/blog.rss",
       "language": "en",
       "enabled": true,
-      "tags": ["javascript", "web", "devtools"]
+      "tags": [
+        "javascript",
+        "web",
+        "devtools"
+      ]
     },
     {
       "id": "schneier",
@@ -495,7 +662,10 @@
       "url": "https://www.schneier.com/feed/atom/",
       "language": "en",
       "enabled": true,
-      "tags": ["security", "privacy"]
+      "tags": [
+        "security",
+        "privacy"
+      ]
     },
     {
       "id": "eff-deeplinks",
@@ -504,7 +674,11 @@
       "url": "https://www.eff.org/rss/updates.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["security", "privacy", "civil-liberties"]
+      "tags": [
+        "security",
+        "privacy",
+        "civil-liberties"
+      ]
     },
     {
       "id": "cisa-advisories",
@@ -513,7 +687,9 @@
       "url": "https://www.cisa.gov/cybersecurity-advisories/all.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["security"]
+      "tags": [
+        "security"
+      ]
     },
     {
       "id": "krebs",
@@ -522,7 +698,10 @@
       "url": "https://krebsonsecurity.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["security", "cybercrime"]
+      "tags": [
+        "security",
+        "cybercrime"
+      ]
     },
     {
       "id": "bleeping-computer",
@@ -531,7 +710,10 @@
       "url": "https://www.bleepingcomputer.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["security", "news"]
+      "tags": [
+        "security",
+        "news"
+      ]
     },
     {
       "id": "troy-hunt",
@@ -540,7 +722,11 @@
       "url": "https://www.troyhunt.com/rss/",
       "language": "en",
       "enabled": true,
-      "tags": ["security", "privacy", "breaches"]
+      "tags": [
+        "security",
+        "privacy",
+        "breaches"
+      ]
     },
     {
       "id": "dark-reading",
@@ -549,7 +735,10 @@
       "url": "https://www.darkreading.com/rss.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["security", "enterprise"]
+      "tags": [
+        "security",
+        "enterprise"
+      ]
     },
     {
       "id": "sciencedaily",
@@ -558,7 +747,10 @@
       "url": "https://www.sciencedaily.com/rss/all.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["science", "news"]
+      "tags": [
+        "science",
+        "news"
+      ]
     },
     {
       "id": "phys-org",
@@ -567,7 +759,10 @@
       "url": "https://phys.org/rss-feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["science", "physics"]
+      "tags": [
+        "science",
+        "physics"
+      ]
     },
     {
       "id": "quanta",
@@ -576,7 +771,11 @@
       "url": "https://www.quantamagazine.org/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["science", "math", "physics"]
+      "tags": [
+        "science",
+        "math",
+        "physics"
+      ]
     },
     {
       "id": "space",
@@ -585,7 +784,10 @@
       "url": "https://www.space.com/feeds/all",
       "language": "en",
       "enabled": true,
-      "tags": ["space", "science"]
+      "tags": [
+        "space",
+        "science"
+      ]
     },
     {
       "id": "nasa",
@@ -594,7 +796,11 @@
       "url": "https://www.nasa.gov/news-release/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["space", "science", "news"]
+      "tags": [
+        "space",
+        "science",
+        "news"
+      ]
     },
     {
       "id": "ieee-spectrum",
@@ -603,7 +809,11 @@
       "url": "https://spectrum.ieee.org/feeds/feed.rss",
       "language": "en",
       "enabled": true,
-      "tags": ["technology", "engineering", "science"]
+      "tags": [
+        "technology",
+        "engineering",
+        "science"
+      ]
     },
     {
       "id": "scitechdaily",
@@ -612,7 +822,11 @@
       "url": "https://scitechdaily.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["science", "technology", "news"]
+      "tags": [
+        "science",
+        "technology",
+        "news"
+      ]
     },
     {
       "id": "hackaday",
@@ -621,7 +835,11 @@
       "url": "https://hackaday.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["hardware", "maker", "hacking"]
+      "tags": [
+        "hardware",
+        "maker",
+        "hacking"
+      ]
     },
     {
       "id": "adafruit",
@@ -630,7 +848,11 @@
       "url": "https://blog.adafruit.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["hardware", "maker", "electronics"]
+      "tags": [
+        "hardware",
+        "maker",
+        "electronics"
+      ]
     },
     {
       "id": "makezine",
@@ -639,7 +861,11 @@
       "url": "https://makezine.com/feed/",
       "language": "en",
       "enabled": true,
-      "tags": ["maker", "hardware", "diy"]
+      "tags": [
+        "maker",
+        "hardware",
+        "diy"
+      ]
     },
     {
       "id": "openai",
@@ -648,7 +874,10 @@
       "url": "https://openai.com/news/rss.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["ai", "technology"]
+      "tags": [
+        "ai",
+        "technology"
+      ]
     },
     {
       "id": "deepmind",
@@ -657,7 +886,10 @@
       "url": "https://deepmind.google/blog/rss.xml",
       "language": "en",
       "enabled": true,
-      "tags": ["ai", "science"]
+      "tags": [
+        "ai",
+        "science"
+      ]
     },
     {
       "id": "google-ai",
@@ -666,7 +898,11 @@
       "url": "https://blog.google/technology/ai/rss/",
       "language": "en",
       "enabled": true,
-      "tags": ["ai", "google", "technology"]
+      "tags": [
+        "ai",
+        "google",
+        "technology"
+      ]
     },
     {
       "id": "apple-newsroom",
@@ -675,9 +911,20 @@
       "url": "https://www.apple.com/newsroom/sitemap.xml",
       "language": "en",
       "enabled": true,
-      "include": ["/newsroom/20"],
-      "exclude": ["/newsroom/archive/", "/newsroom/guide-", "/newsroom/event/", "/newsroom/topics/"],
-      "tags": ["apple", "technology", "news"]
+      "include": [
+        "/newsroom/20"
+      ],
+      "exclude": [
+        "/newsroom/archive/",
+        "/newsroom/guide-",
+        "/newsroom/event/",
+        "/newsroom/topics/"
+      ],
+      "tags": [
+        "apple",
+        "technology",
+        "news"
+      ]
     },
     {
       "id": "postgresql-news",
@@ -686,8 +933,14 @@
       "url": "https://www.postgresql.org/sitemap.xml",
       "language": "en",
       "enabled": true,
-      "include": ["/about/news/"],
-      "tags": ["database", "opensource", "programming"]
+      "include": [
+        "/about/news/"
+      ],
+      "tags": [
+        "database",
+        "opensource",
+        "programming"
+      ]
     },
     {
       "id": "smashing-sitemap",
@@ -696,9 +949,787 @@
       "url": "https://www.smashingmagazine.com/sitemap.xml",
       "language": "en",
       "enabled": true,
-      "include": ["/20"],
-      "exclude": ["/ebook-bundles/", "/author/", "/category/"],
-      "tags": ["web", "design", "frontend"]
+      "include": [
+        "/20"
+      ],
+      "exclude": [
+        "/ebook-bundles/",
+        "/author/",
+        "/category/"
+      ],
+      "tags": [
+        "web",
+        "design",
+        "frontend"
+      ]
+    },
+    {
+      "id": "al-jazeera",
+      "name": "Al Jazeera",
+      "type": "rss",
+      "url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "news",
+        "world"
+      ]
+    },
+    {
+      "id": "fortune",
+      "name": "Fortune",
+      "type": "rss",
+      "url": "https://fortune.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "business",
+        "finance"
+      ]
+    },
+    {
+      "id": "business-insider",
+      "name": "Business Insider",
+      "type": "atom",
+      "url": "https://www.businessinsider.com/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "business",
+        "news"
+      ]
+    },
+    {
+      "id": "forbes-innovation",
+      "name": "Forbes Innovation",
+      "type": "rss",
+      "url": "https://www.forbes.com/innovation/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "business",
+        "technology",
+        "innovation"
+      ]
+    },
+    {
+      "id": "quartz",
+      "name": "Quartz",
+      "type": "rss",
+      "url": "https://qz.com/feed",
+      "language": "en",
+      "enabled": false,
+      "tags": [
+        "business",
+        "economics"
+      ]
+    },
+    {
+      "id": "bbc-business",
+      "name": "BBC Business",
+      "type": "rss",
+      "url": "https://feeds.bbci.co.uk/news/business/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "business",
+        "finance",
+        "news"
+      ]
+    },
+    {
+      "id": "cnbc",
+      "name": "CNBC",
+      "type": "rss",
+      "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "business",
+        "finance",
+        "news"
+      ]
+    },
+    {
+      "id": "marketwatch",
+      "name": "MarketWatch",
+      "type": "rss",
+      "url": "https://feeds.marketwatch.com/marketwatch/topstories/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "finance",
+        "business"
+      ]
+    },
+    {
+      "id": "bbc-sport",
+      "name": "BBC Sport",
+      "type": "rss",
+      "url": "https://feeds.bbci.co.uk/sport/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "sports"
+      ]
+    },
+    {
+      "id": "espn",
+      "name": "ESPN",
+      "type": "rss",
+      "url": "https://www.espn.com/espn/rss/news",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "sports"
+      ]
+    },
+    {
+      "id": "sky-sports",
+      "name": "Sky Sports",
+      "type": "rss",
+      "url": "https://www.skysports.com/rss/12040",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "sports"
+      ]
+    },
+    {
+      "id": "npr-arts",
+      "name": "NPR Arts & Life",
+      "type": "rss",
+      "url": "https://feeds.npr.org/1008/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "arts",
+        "culture"
+      ]
+    },
+    {
+      "id": "guardian-culture",
+      "name": "The Guardian Culture",
+      "type": "rss",
+      "url": "https://www.theguardian.com/culture/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "culture",
+        "arts"
+      ]
+    },
+    {
+      "id": "bbc-arts",
+      "name": "BBC Entertainment & Arts",
+      "type": "rss",
+      "url": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "entertainment",
+        "arts",
+        "culture"
+      ]
+    },
+    {
+      "id": "rolling-stone",
+      "name": "Rolling Stone",
+      "type": "rss",
+      "url": "https://www.rollingstone.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "music",
+        "culture",
+        "entertainment"
+      ]
+    },
+    {
+      "id": "billboard",
+      "name": "Billboard",
+      "type": "rss",
+      "url": "https://www.billboard.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "music",
+        "entertainment"
+      ]
+    },
+    {
+      "id": "variety",
+      "name": "Variety",
+      "type": "rss",
+      "url": "https://variety.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "entertainment",
+        "movies",
+        "culture"
+      ]
+    },
+    {
+      "id": "deadline",
+      "name": "Deadline",
+      "type": "rss",
+      "url": "https://deadline.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "entertainment",
+        "movies",
+        "tv"
+      ]
+    },
+    {
+      "id": "av-club",
+      "name": "The A.V. Club",
+      "type": "rss",
+      "url": "https://www.avclub.com/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "entertainment",
+        "culture"
+      ]
+    },
+    {
+      "id": "guardian-film",
+      "name": "The Guardian Film",
+      "type": "rss",
+      "url": "https://www.theguardian.com/film/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "movies",
+        "entertainment"
+      ]
+    },
+    {
+      "id": "rottentomatoes",
+      "name": "Rotten Tomatoes",
+      "type": "rss",
+      "url": "https://editorial.rottentomatoes.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "movies",
+        "entertainment"
+      ]
+    },
+    {
+      "id": "kotaku",
+      "name": "Kotaku",
+      "type": "rss",
+      "url": "https://kotaku.com/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "gaming",
+        "entertainment"
+      ]
+    },
+    {
+      "id": "polygon",
+      "name": "Polygon",
+      "type": "atom",
+      "url": "https://www.polygon.com/rss/index.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "gaming",
+        "entertainment"
+      ]
+    },
+    {
+      "id": "ign",
+      "name": "IGN",
+      "type": "rss",
+      "url": "https://feeds.ign.com/ign/all",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "gaming",
+        "entertainment"
+      ]
+    },
+    {
+      "id": "eurogamer",
+      "name": "Eurogamer",
+      "type": "rss",
+      "url": "https://www.eurogamer.net/feed",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "gaming"
+      ]
+    },
+    {
+      "id": "guardian-life",
+      "name": "The Guardian Life & Style",
+      "type": "rss",
+      "url": "https://www.theguardian.com/lifeandstyle/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "lifestyle",
+        "food"
+      ]
+    },
+    {
+      "id": "bon-appetit",
+      "name": "Bon Appétit",
+      "type": "rss",
+      "url": "https://www.bonappetit.com/feed/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "food",
+        "cooking",
+        "lifestyle"
+      ]
+    },
+    {
+      "id": "minimalist-baker",
+      "name": "Minimalist Baker",
+      "type": "rss",
+      "url": "https://minimalistbaker.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "food",
+        "cooking"
+      ]
+    },
+    {
+      "id": "taste-of-home",
+      "name": "Taste of Home",
+      "type": "rss",
+      "url": "https://www.tasteofhome.com/feed",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "food",
+        "cooking",
+        "lifestyle"
+      ]
+    },
+    {
+      "id": "delish",
+      "name": "Delish",
+      "type": "rss",
+      "url": "https://www.delish.com/rss/all/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "food",
+        "cooking"
+      ]
+    },
+    {
+      "id": "runners-world",
+      "name": "Runner's World",
+      "type": "rss",
+      "url": "https://www.runnersworld.com/rss/all/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "fitness",
+        "running",
+        "health"
+      ]
+    },
+    {
+      "id": "smithsonian",
+      "name": "Smithsonian Magazine",
+      "type": "rss",
+      "url": "https://www.smithsonianmag.com/rss/latest_articles/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "history",
+        "science",
+        "culture"
+      ]
+    },
+    {
+      "id": "esquire",
+      "name": "Esquire",
+      "type": "rss",
+      "url": "https://www.esquire.com/rss/all/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "lifestyle",
+        "culture",
+        "men"
+      ]
+    },
+    {
+      "id": "vox",
+      "name": "Vox",
+      "type": "atom",
+      "url": "https://www.vox.com/rss/index.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "news",
+        "politics",
+        "explainer"
+      ]
+    },
+    {
+      "id": "slate",
+      "name": "Slate",
+      "type": "rss",
+      "url": "https://slate.com/feeds/all.rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "news",
+        "politics",
+        "culture"
+      ]
+    },
+    {
+      "id": "salon",
+      "name": "Salon",
+      "type": "rss",
+      "url": "https://www.salon.com/feed",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "news",
+        "politics",
+        "culture"
+      ]
+    },
+    {
+      "id": "the-week",
+      "name": "The Week",
+      "type": "rss",
+      "url": "https://theweek.com/rss.xml",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "news",
+        "politics",
+        "culture"
+      ]
+    },
+    {
+      "id": "time",
+      "name": "TIME",
+      "type": "rss",
+      "url": "https://time.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "news",
+        "politics",
+        "culture"
+      ]
+    },
+    {
+      "id": "time-health",
+      "name": "TIME Health",
+      "type": "rss",
+      "url": "https://time.com/health/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "health",
+        "wellness"
+      ]
+    },
+    {
+      "id": "guardian-health",
+      "name": "The Guardian Health",
+      "type": "rss",
+      "url": "https://www.theguardian.com/society/health/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "health",
+        "medicine"
+      ]
+    },
+    {
+      "id": "popular-mechanics",
+      "name": "Popular Mechanics",
+      "type": "rss",
+      "url": "https://www.popularmechanics.com/rss/all/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "diy",
+        "science",
+        "lifestyle"
+      ]
+    },
+    {
+      "id": "mental-floss",
+      "name": "Mental Floss",
+      "type": "rss",
+      "url": "https://www.mentalfloss.com/feed",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "fun",
+        "history",
+        "trivia"
+      ]
+    },
+    {
+      "id": "futurism",
+      "name": "Futurism",
+      "type": "rss",
+      "url": "https://futurism.com/feed",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "future",
+        "technology",
+        "science"
+      ]
+    },
+    {
+      "id": "the-onion",
+      "name": "The Onion",
+      "type": "rss",
+      "url": "https://www.theonion.com/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "humor",
+        "satire"
+      ]
+    },
+    {
+      "id": "wait-but-why",
+      "name": "Wait But Why",
+      "type": "rss",
+      "url": "https://waitbutwhy.com/feed",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "ideas",
+        "longform",
+        "science"
+      ]
+    },
+    {
+      "id": "marginalian",
+      "name": "The Marginalian",
+      "type": "rss",
+      "url": "https://www.themarginalian.org/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "philosophy",
+        "literature",
+        "ideas"
+      ]
+    },
+    {
+      "id": "guardian-books",
+      "name": "The Guardian Books",
+      "type": "rss",
+      "url": "https://www.theguardian.com/books/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "books",
+        "literature"
+      ]
+    },
+    {
+      "id": "nyrb",
+      "name": "The New York Review of Books",
+      "type": "rss",
+      "url": "https://www.nybooks.com/feed/",
+      "language": "en",
+      "enabled": false,
+      "tags": [
+        "books",
+        "literature",
+        "culture"
+      ]
+    },
+    {
+      "id": "lithub",
+      "name": "Literary Hub",
+      "type": "rss",
+      "url": "https://lithub.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "books",
+        "literature"
+      ]
+    },
+    {
+      "id": "book-riot",
+      "name": "Book Riot",
+      "type": "rss",
+      "url": "https://bookriot.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "books",
+        "literature"
+      ]
+    },
+    {
+      "id": "aeon",
+      "name": "Aeon",
+      "type": "rss",
+      "url": "https://aeon.co/feed.rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "philosophy",
+        "ideas",
+        "essays"
+      ]
+    },
+    {
+      "id": "history-extra",
+      "name": "BBC History Extra",
+      "type": "rss",
+      "url": "https://www.historyextra.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "history"
+      ]
+    },
+    {
+      "id": "big-think",
+      "name": "Big Think",
+      "type": "rss",
+      "url": "https://bigthink.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "ideas",
+        "science",
+        "culture"
+      ]
+    },
+    {
+      "id": "99-invisible",
+      "name": "99% Invisible",
+      "type": "rss",
+      "url": "https://99percentinvisible.org/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "design",
+        "culture",
+        "stories"
+      ]
+    },
+    {
+      "id": "artnews",
+      "name": "ARTnews",
+      "type": "rss",
+      "url": "https://www.artnews.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "art",
+        "culture"
+      ]
+    },
+    {
+      "id": "colossal",
+      "name": "Colossal",
+      "type": "rss",
+      "url": "https://www.thisiscolossal.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "art",
+        "design",
+        "culture"
+      ]
+    },
+    {
+      "id": "design-milk",
+      "name": "Design Milk",
+      "type": "rss",
+      "url": "https://design-milk.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "design",
+        "interiors"
+      ]
+    },
+    {
+      "id": "archdaily",
+      "name": "ArchDaily",
+      "type": "rss",
+      "url": "https://www.archdaily.com/feed",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "architecture",
+        "design"
+      ]
+    },
+    {
+      "id": "dezeen",
+      "name": "Dezeen",
+      "type": "rss",
+      "url": "https://www.dezeen.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "design",
+        "architecture"
+      ]
+    },
+    {
+      "id": "fast-company",
+      "name": "Fast Company",
+      "type": "rss",
+      "url": "https://www.fastcompany.com/rss",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "business",
+        "design",
+        "innovation"
+      ]
+    },
+    {
+      "id": "nomadic-matt",
+      "name": "Nomadic Matt",
+      "type": "rss",
+      "url": "https://www.nomadicmatt.com/feed/",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "travel",
+        "budget"
+      ]
+    },
+    {
+      "id": "atlas-obscura",
+      "name": "Atlas Obscura",
+      "type": "rss",
+      "url": "https://www.atlasobscura.com/feeds/latest",
+      "language": "en",
+      "enabled": true,
+      "tags": [
+        "travel",
+        "history",
+        "curiosities"
+      ]
     }
   ]
 }

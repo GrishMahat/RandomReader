@@ -15,6 +15,8 @@ export const SourceSchema = z.object({
   errorCount: z.number().default(0),
   include: z.array(z.string()).optional(),
   exclude: z.array(z.string()).optional(),
+  feeds: z.array(z.string().url()).default([]),
+  maxUrls: z.number().int().positive().optional(),
 });
 
 export type Source = z.infer<typeof SourceSchema>;
@@ -24,8 +26,6 @@ export const ArticleSchema = z.object({
   sourceId: z.string(),
   title: z.string(),
   url: z.string().url(),
-  content: z.string().optional(),
-  summary: z.string().optional(),
   author: z.string().optional(),
   publishedAt: z.number().optional(),
   fetchedAt: z.number(),
@@ -36,8 +36,10 @@ export const ArticleSchema = z.object({
 export type Article = z.infer<typeof ArticleSchema>;
 
 export const SettingsSchema = z.object({
-  catalogUrl: z.string().default('https://gist.githubusercontent.com/GrishMahat/bbe566d031b9847e8e83a367a5838253/raw/catalog.json'),
+  catalogUrl: z.string().default('https://raw.githubusercontent.com/GrishMahat/RandomReader/refs/heads/main/catalog.json'),
+  catalogMode: z.enum(['remote', 'local']).default('remote'),
   autoRefreshInterval: z.number().default(86400000),
+  refreshOnStartup: z.boolean().default(true),
   openIn: z.enum(['new_tab', 'current_tab']).default('new_tab'),
   includeTags: z.array(z.string()).default([]),
   excludeTags: z.array(z.string()).default([]),
@@ -46,8 +48,10 @@ export const SettingsSchema = z.object({
   maxAgeDays: z.number().default(0),
   keywordsInclude: z.array(z.string()).default([]),
   keywordsExclude: z.array(z.string()).default([]),
+  tagMatchMode: z.enum(['any', 'all']).default('any'),
   showPreview: z.boolean().default(true),
   soundEffects: z.boolean().default(false),
+  onboarded: z.boolean().default(false),
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
@@ -56,13 +60,30 @@ export const CatalogSchema = z.object({
   version: z.number(),
   updatedAt: z.string(),
   sources: z.array(SourceSchema),
+  blockedDomains: z.array(z.string()).default([]),
 });
 
 export type Catalog = z.infer<typeof CatalogSchema>;
 
+export const HistoryEntrySchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  url: z.string(),
+  sourceId: z.string(),
+  sourceName: z.string().optional(),
+  author: z.string().optional(),
+  openedAt: z.number(),
+});
+
+export type HistoryEntry = z.infer<typeof HistoryEntrySchema>;
+
+export type StarredMap = Record<string, Article>;
+
 export const DEFAULT_SETTINGS: Settings = {
-  catalogUrl: 'https://gist.githubusercontent.com/GrishMahat/bbe566d031b9847e8e83a367a5838253/raw/catalog.json',
+  catalogUrl: 'https://raw.githubusercontent.com/GrishMahat/RandomReader/refs/heads/main/catalog.json',
+  catalogMode: 'remote',
   autoRefreshInterval: 86400000,
+  refreshOnStartup: true,
   openIn: 'new_tab',
   includeTags: [],
   excludeTags: [],
@@ -71,6 +92,8 @@ export const DEFAULT_SETTINGS: Settings = {
   maxAgeDays: 0,
   keywordsInclude: [],
   keywordsExclude: [],
+  tagMatchMode: 'any',
   showPreview: true,
   soundEffects: false,
+  onboarded: false,
 };

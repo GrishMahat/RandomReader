@@ -3,6 +3,7 @@ import { customElement, state } from 'lit/decorators.js';
 import type { Settings } from '../models';
 import { DEFAULT_SETTINGS } from '../models';
 import { popupStyles } from './popup.styles';
+import { applyTheme, subscribeToSystemTheme } from '../utils/theme';
 
 interface SettingsResponse {
   success: boolean;
@@ -20,18 +21,30 @@ export class RandomReaderPopup extends LitElement {
   @state() private statusMessage = '';
   @state() private statusType: 'success' | 'error' | 'loading' | '' = '';
   @state() private activeTab: 'roll' | 'filters' | 'history' = 'roll';
-  @state() private history: Array<{ id: string; title: string; url: string; fetchedAt?: number }> = [];
+  @state() private history: Array<{ id: string; title: string; url: string; fetchedAt?: number; sourceName?: string; author?: string }> = [];
+  private unsubscribeTheme: (() => void) | null = null;
 
   async connectedCallback(): Promise<void> {
     super.connectedCallback();
     await this.loadSettings();
     await this.loadHistory();
+    applyTheme(this, this.settings.theme);
+    this.unsubscribeTheme = subscribeToSystemTheme(this, () => this.settings.theme);
+  }
+
+  disconnectedCallback(): void {
+    super.disconnectedCallback();
+    this.unsubscribeTheme?.();
+    this.unsubscribeTheme = null;
   }
 
   private async loadSettings(): Promise<void> {
     try {
       const result = await this.sendMessage<SettingsResponse>({ type: 'GET_SETTINGS' });
-      if (result.success && result.settings) this.settings = result.settings;
+      if (result.success && result.settings) {
+        this.settings = result.settings;
+        applyTheme(this, this.settings.theme);
+      }
     } catch (error) {
       console.error('Failed to load settings:', error);
     }
@@ -39,7 +52,7 @@ export class RandomReaderPopup extends LitElement {
 
   private async loadHistory(): Promise<void> {
     try {
-      const result = await this.sendMessage<{ success: boolean; history?: Array<{ id: string; title: string; url: string; fetchedAt?: number }> }>({ type: 'GET_HISTORY' });
+      const result = await this.sendMessage<{ success: boolean; history?: Array<{ id: string; title: string; url: string; fetchedAt?: number; sourceName?: string; author?: string }> }>({ type: 'GET_HISTORY' });
       if (result.success && result.history) {
         this.history = result.history;
       }
@@ -59,12 +72,24 @@ export class RandomReaderPopup extends LitElement {
   private async handleOpenRandom(): Promise<void> {
     this.loading = true;
     this.clearStatus();
+    if (this.settings.soundEffects) this.ensureAudio();
 
     try {
-      const result = await this.sendMessage<{ success: boolean; error?: string }>({ type: 'OPEN_RANDOM' });
+      const result = await this.sendMessage<{ success: boolean; streak?: number; odds?: number; sourceName?: string; error?: string }>({ type: 'OPEN_RANDOM' });
       if (result.success) {
         await this.loadHistory();
-        window.close();
+        const showStreak = (result.streak ?? 0) >= 2;
+        if (showStreak) {
+          const odds = (result.odds ?? 1).toLocaleString();
+          this.showStatus(`🎲 Lucky! ${result.sourceName || 'Same source'} ${result.streak}× in a row — ~1 in ${odds} odds!`, 'success');
+        }
+        const closeDelay = this.settings.soundEffects ? (showStreak ? 2000 : 380) : (showStreak ? 2000 : 0);
+        if (closeDelay > 0) {
+          if (this.settings.soundEffects) this.playOpenSound();
+          setTimeout(() => window.close(), closeDelay);
+        } else {
+          window.close();
+        }
       } else {
         this.showStatus(result.error || 'Failed to open article', 'error');
       }
@@ -80,9 +105,9 @@ export class RandomReaderPopup extends LitElement {
     this.showStatus('Refreshing feeds...', 'loading');
 
     try {
-      const result = await this.sendMessage<{ success: boolean; count?: number; error?: string }>({ type: 'REFRESH_FEEDS' });
+      const result = await this.sendMessage<{ success: boolean; fetched?: number; added?: number; error?: string }>({ type: 'REFRESH_FEEDS' });
       if (result.success) {
-        this.showStatus(`Added ${result.count || 0} new articles`, 'success');
+        this.showStatus(`Refreshed ${result.fetched || 0} sources (${result.added || 0} new)`, 'success');
         await this.loadHistory();
       } else {
         this.showStatus(result.error || 'Refresh failed', 'error');
@@ -101,6 +126,56 @@ export class RandomReaderPopup extends LitElement {
       this.settings = next;
     } else {
       this.showStatus(result.error || 'Failed to save setting', 'error');
+    }
+  }
+
+  private formatDate(ts?: number): string {
+    if (!ts) return '';
+    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  private audioCtx: AudioContext | null = null;
+
+  private ensureAudio(): void {
+    try {
+      if (!this.audioCtx || this.audioCtx.state === 'closed') {
+        const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        this.audioCtx = new Ctx();
+      }
+      if (this.audioCtx.state === 'suspended') {
+        void this.audioCtx.resume();
+      }
+    } catch {
+      this.audioCtx = null;
+    }
+  }
+
+  private playOpenSound(): void {
+    this.ensureAudio();
+    const ctx = this.audioCtx;
+    if (!ctx) return;
+    try {
+      const now = ctx.currentTime;
+      const gain = ctx.createGain();
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.12, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+
+      [660, 880].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + i * 0.07);
+        osc.connect(gain);
+        osc.start(now + i * 0.07);
+        osc.stop(now + 0.25);
+      });
+      setTimeout(() => {
+        try { void ctx.close(); } catch { /* noop */ }
+        this.audioCtx = null;
+      }, 400);
+    } catch {
+      this.audioCtx = null;
     }
   }
 
@@ -149,6 +224,18 @@ export class RandomReaderPopup extends LitElement {
           ${this.refreshing ? html`<span class="spinner"></span>` : html`↻`}
         </button>
       </header>
+
+      ${!this.settings.onboarded
+        ? html`
+            <div class="onboard-banner">
+              <div class="onboard-banner-text">
+                <strong>Set up your interests</strong>
+                <span>Choose topics and we'll roll from those.</span>
+              </div>
+              <button class="onboard-banner-btn" @click=${this.openSettings}>Set Up</button>
+            </div>
+          `
+        : ''}
 
       <div class="content">
         <button
@@ -217,19 +304,28 @@ export class RandomReaderPopup extends LitElement {
 
         ${this.activeTab === 'history'
           ? html`
-              ${this.history.length > 0
-                ? html`
-                    <ul class="history-list">
-                      ${this.history.slice(0, 15).map(
-                        (item) => html`
-                          <li class="history-item">
-                            <a class="history-link" href=${item.url} target="_blank" rel="noopener">${item.title}</a>
-                          </li>
-                        `
-                      )}
-                    </ul>
-                  `
-                : html`<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 16px;">No reading history yet.</div>`}
+              <div class="panel">
+                <div class="panel-row">
+                  <span class="panel-label">Reading History</span>
+                  <button class="btn-mini" @click=${this.loadHistory} title="Reload history">↻ Refresh</button>
+                </div>
+                ${this.history.length > 0
+                  ? html`
+                      <ul class="history-list">
+                        ${this.history.slice(0, 15).map(
+                          (item) => html`
+                            <li class="history-item">
+                              <a class="history-link" href=${item.url} target="_blank" rel="noopener">${item.title}</a>
+                              <div class="history-meta">
+                                ${item.sourceName || 'Unknown source'}${item.author ? ` · ${item.author}` : ''} · ${this.formatDate(item.fetchedAt)}
+                              </div>
+                            </li>
+                          `
+                        )}
+                      </ul>
+                    `
+                  : html`<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 16px;">No reading history yet.</div>`}
+              </div>
             `
           : ''}
 
