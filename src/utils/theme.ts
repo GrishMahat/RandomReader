@@ -2,10 +2,14 @@ import type { Settings } from '../models';
 
 export type ResolvedTheme = 'light' | 'dark';
 
-const media = window.matchMedia('(prefers-color-scheme: dark)');
+/** Lazy accessor so this module is safe to import in non-window contexts (e.g. tests, service worker). */
+function getMediaQuery(): MediaQueryList | null {
+  if (typeof window === 'undefined') return null;
+  return window.matchMedia('(prefers-color-scheme: dark)');
+}
 
 export function resolveTheme(theme: Settings['theme']): ResolvedTheme {
-  if (theme === 'system') return media.matches ? 'dark' : 'light';
+  if (theme === 'system') return getMediaQuery()?.matches ? 'dark' : 'light';
   return theme;
 }
 
@@ -19,6 +23,8 @@ export function applyTheme(host: HTMLElement, theme: Settings['theme']): void {
  * the user's setting is `system`. Returns a cleanup function.
  */
 export function subscribeToSystemTheme(host: HTMLElement, getTheme: () => Settings['theme']): () => void {
+  const media = getMediaQuery();
+  if (!media) return () => undefined;
   const handler = (): void => {
     if (getTheme() === 'system') applyTheme(host, 'system');
   };

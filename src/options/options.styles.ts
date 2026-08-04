@@ -39,6 +39,33 @@ export const optionsStyles = css`
     background: var(--bg);
   }
 
+  /* Utility classes replacing inline styles */
+  .pref-row-borderless {
+    border-bottom: none !important;
+    padding-bottom: 0 !important;
+  }
+
+  .text-danger {
+    color: var(--danger) !important;
+  }
+
+  .text-muted {
+    color: var(--text-muted) !important;
+  }
+
+  .text-secondary {
+    color: var(--text-secondary) !important;
+  }
+
+  .mb-2 { margin-bottom: 8px !important; }
+  .mb-3 { margin-bottom: 12px !important; }
+  .mt-2 { margin-top: 8px !important; }
+  .mt-3 { margin-top: 12px !important; }
+
+  .col-width-on { width: 52px; }
+  .col-width-date { width: 120px; }
+  .cell-nowrap { white-space: nowrap; font-size: 12px; }
+
   * {
     box-sizing: border-box;
     margin: 0;
@@ -721,6 +748,47 @@ export const optionsStyles = css`
     background: var(--surface-alt);
     color: var(--text-secondary);
     border: 1px solid var(--border);
+  }
+
+  /* Snooze controls */
+  .snooze-select {
+    max-width: 110px;
+    padding: 3px 6px;
+    font-size: 12px;
+    border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text-primary);
+  }
+
+  .snooze-badge {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    background: var(--surface-alt);
+    color: var(--text-secondary);
+    border: 1px dashed var(--border-strong);
+  }
+
+  .btn-mini {
+    padding: 3px 9px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 4px;
+    cursor: pointer;
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-strong);
+    transition: background 0.1s, border-color 0.1s;
+  }
+
+  .btn-mini:hover {
+    background: var(--surface-alt);
+    border-color: #b5b5b5;
   }
 
   /* Empty state */

@@ -14,7 +14,7 @@ type XmlObject = Record<string, unknown>;
 
 function parseDate(dateStr: string): number {
   const date = new Date(dateStr);
-  return isNaN(date.getTime()) ? Date.now() : date.getTime();
+  return Number.isNaN(date.getTime()) ? Date.now() : date.getTime();
 }
 
 function generateId(sourceId: string, url: string): string {
@@ -60,8 +60,17 @@ function getAttr(obj: XmlObject | undefined, key: string): string | undefined {
   return obj[key] as string | undefined;
 }
 
-function getXmlObjectValue(obj: XmlObject, key: string): unknown {
-  return obj[key];
+function getXmlObjectValue(obj: XmlObject | undefined, key: string): unknown {
+  return obj ? obj[key] : undefined;
+}
+
+/** Return the first non-null value among keys, stringified. */
+function getText(item: XmlObject, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const val = item[key];
+    if (val != null) return String(val);
+  }
+  return undefined;
 }
 
 function getNodeUrl(node: unknown): string {
@@ -93,7 +102,7 @@ function selectRssUrl(item: XmlObject): string {
 export function parseRSS(source: Source, xml: string): Article[] {
   const result = parser.parse(xml);
   const rss = getXmlObjectValue(result, 'rss') as XmlObject | undefined;
-  const channel = rss ? getXmlObjectValue(rss, 'channel') as XmlObject | undefined : undefined;
+  const channel = rss ? (getXmlObjectValue(rss, 'channel') as XmlObject | undefined) : undefined;
   const items = channel ? getXmlObjectValue(channel, 'item') : undefined;
   if (!items) return [];
 
@@ -102,13 +111,14 @@ export function parseRSS(source: Source, xml: string): Article[] {
     .filter((item): item is XmlObject => item !== null && typeof item === 'object')
     .map((item) => {
       const url = selectRssUrl(item);
+      const publishedAt = getText(item, 'pubDate', 'dc:date');
       return {
         id: generateId(source.id, url),
         sourceId: source.id,
-        title: String(getXmlObjectValue(item, 'title') || 'Untitled'),
+        title: getText(item, 'title') ?? 'Untitled',
         url,
-        author: getXmlObjectValue(item, 'author') ? String(getXmlObjectValue(item, 'author')) : getXmlObjectValue(item, 'dc:creator') ? String(getXmlObjectValue(item, 'dc:creator')) : undefined,
-        publishedAt: getXmlObjectValue(item, 'pubDate') ? parseDate(String(getXmlObjectValue(item, 'pubDate'))) : getXmlObjectValue(item, 'dc:date') ? parseDate(String(getXmlObjectValue(item, 'dc:date'))) : undefined,
+        author: getText(item, 'author', 'dc:creator'),
+        publishedAt: publishedAt ? parseDate(publishedAt) : undefined,
         fetchedAt: Date.now(),
         read: false,
         starred: false,
@@ -119,7 +129,7 @@ export function parseRSS(source: Source, xml: string): Article[] {
 
 function selectAtomUrl(entry: XmlObject): string {
   const link = getXmlObjectValue(entry, 'link');
-  const links = Array.isArray(link) ? link as XmlObject[] : link ? [link as XmlObject] : [];
+  const links = Array.isArray(link) ? (link as XmlObject[]) : link ? [link as XmlObject] : [];
   if (links.length === 0) return '';
 
   const alternate = links.find((l) => {
@@ -146,14 +156,14 @@ export function parseAtom(source: Source, xml: string): Article[] {
     .filter((entry): entry is XmlObject => entry !== null && typeof entry === 'object')
     .map((entry) => {
       const url = selectAtomUrl(entry);
-
+      const publishedAt = getText(entry, 'published', 'updated');
       return {
-        id: generateId(source.id, String(getXmlObjectValue(entry, 'id') || url || '')),
+        id: generateId(source.id, getText(entry, 'id') ?? url ?? ''),
         sourceId: source.id,
-        title: String(getXmlObjectValue(entry, 'title') || 'Untitled'),
+        title: getText(entry, 'title') ?? 'Untitled',
         url,
-        author: getAttr(getXmlObjectValue(entry, 'author') as XmlObject | undefined, 'name'),
-        publishedAt: getXmlObjectValue(entry, 'published') ? parseDate(String(getXmlObjectValue(entry, 'published'))) : getXmlObjectValue(entry, 'updated') ? parseDate(String(getXmlObjectValue(entry, 'updated'))) : undefined,
+        author: getAttr(entry.author as XmlObject | undefined, 'name'),
+        publishedAt: publishedAt ? parseDate(publishedAt) : undefined,
         fetchedAt: Date.now(),
         read: false,
         starred: false,
@@ -164,13 +174,15 @@ export function parseAtom(source: Source, xml: string): Article[] {
 
 export function parseSitemap(source: Source, xml: string): Article[] {
   const result = parser.parse(xml);
-  const urls = getXmlObjectValue(getXmlObjectValue(result, 'urlset') as XmlObject, 'url') || getXmlObjectValue(getXmlObjectValue(result, 'sitemapindex') as XmlObject, 'sitemap');
+  const urlset = getXmlObjectValue(result, 'urlset') as XmlObject | undefined;
+  const sitemapindex = getXmlObjectValue(result, 'sitemapindex') as XmlObject | undefined;
+  const urls = getXmlObjectValue(urlset, 'url') || getXmlObjectValue(sitemapindex, 'sitemap');
   if (!urls) return [];
 
   const urlArray = Array.isArray(urls) ? urls : [urls];
   const rawUrls = urlArray
     .filter((url): url is XmlObject => url !== null && typeof url === 'object')
-    .map((url) => String(getXmlObjectValue(url, 'loc') || getXmlObjectValue(url, '@_href') || ''))
+    .map((url) => String(getText(url, 'loc') || getAttr(url, '@_href') || ''))
     .filter(Boolean);
 
   const filteredUrls = rawUrls.filter((url) => isUrlAllowed(url, source));

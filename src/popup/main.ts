@@ -1,9 +1,10 @@
-import { LitElement, html } from 'lit';
+import { html, LitElement } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import type { Settings } from '../models';
 import { DEFAULT_SETTINGS } from '../models';
-import { popupStyles } from './popup.styles';
+import { sendMessage } from '../utils/messaging';
 import { applyTheme, subscribeToSystemTheme } from '../utils/theme';
+import { popupStyles } from './popup.styles';
 
 interface SettingsResponse {
   success: boolean;
@@ -21,7 +22,14 @@ export class RandomReaderPopup extends LitElement {
   @state() private statusMessage = '';
   @state() private statusType: 'success' | 'error' | 'loading' | '' = '';
   @state() private activeTab: 'roll' | 'filters' | 'history' = 'roll';
-  @state() private history: Array<{ id: string; title: string; url: string; fetchedAt?: number; sourceName?: string; author?: string }> = [];
+  @state() private history: Array<{
+    id: string;
+    title: string;
+    url: string;
+    fetchedAt?: number;
+    sourceName?: string;
+    author?: string;
+  }> = [];
   private unsubscribeTheme: (() => void) | null = null;
 
   async connectedCallback(): Promise<void> {
@@ -40,7 +48,7 @@ export class RandomReaderPopup extends LitElement {
 
   private async loadSettings(): Promise<void> {
     try {
-      const result = await this.sendMessage<SettingsResponse>({ type: 'GET_SETTINGS' });
+      const result = await sendMessage<SettingsResponse>({ type: 'GET_SETTINGS' });
       if (result.success && result.settings) {
         this.settings = result.settings;
         applyTheme(this, this.settings.theme);
@@ -52,7 +60,17 @@ export class RandomReaderPopup extends LitElement {
 
   private async loadHistory(): Promise<void> {
     try {
-      const result = await this.sendMessage<{ success: boolean; history?: Array<{ id: string; title: string; url: string; fetchedAt?: number; sourceName?: string; author?: string }> }>({ type: 'GET_HISTORY' });
+      const result = await sendMessage<{
+        success: boolean;
+        history?: Array<{
+          id: string;
+          title: string;
+          url: string;
+          fetchedAt?: number;
+          sourceName?: string;
+          author?: string;
+        }>;
+      }>({ type: 'GET_HISTORY' });
       if (result.success && result.history) {
         this.history = result.history;
       }
@@ -61,31 +79,32 @@ export class RandomReaderPopup extends LitElement {
     }
   }
 
-  private sendMessage<T>(message: object): Promise<T> {
-    return new Promise((resolve) => {
-      chrome.runtime.sendMessage(message, (response) => {
-        resolve((response ?? { success: false, error: 'No response from background' }) as T);
-      });
-    });
-  }
-
   private async handleOpenRandom(): Promise<void> {
     this.loading = true;
     this.clearStatus();
     if (this.settings.soundEffects) this.ensureAudio();
 
     try {
-      const result = await this.sendMessage<{ success: boolean; streak?: number; odds?: number; sourceName?: string; error?: string }>({ type: 'OPEN_RANDOM' });
+      const result = await sendMessage<{
+        success: boolean;
+        streak?: number;
+        odds?: number;
+        sourceName?: string;
+        error?: string;
+      }>({ type: 'OPEN_RANDOM' });
       if (result.success) {
         await this.loadHistory();
         const showStreak = (result.streak ?? 0) >= 2;
         if (showStreak) {
           const odds = (result.odds ?? 1).toLocaleString();
-          this.showStatus(`🎲 Lucky! ${result.sourceName || 'Same source'} ${result.streak}× in a row — ~1 in ${odds} odds!`, 'success');
+          this.showStatus(
+            `🎲 Lucky! ${result.sourceName || 'Same source'} ${result.streak}× in a row — ~1 in ${odds} odds!`,
+            'success',
+          );
         }
-        const closeDelay = this.settings.soundEffects ? (showStreak ? 2000 : 380) : (showStreak ? 2000 : 0);
+        const closeDelay = showStreak ? 2000 : this.settings.soundEffects ? 380 : 0;
+        if (this.settings.soundEffects) this.playOpenSound();
         if (closeDelay > 0) {
-          if (this.settings.soundEffects) this.playOpenSound();
           setTimeout(() => window.close(), closeDelay);
         } else {
           window.close();
@@ -93,7 +112,7 @@ export class RandomReaderPopup extends LitElement {
       } else {
         this.showStatus(result.error || 'Failed to open article', 'error');
       }
-    } catch (error) {
+    } catch {
       this.showStatus('Failed to open article', 'error');
     } finally {
       this.loading = false;
@@ -105,14 +124,16 @@ export class RandomReaderPopup extends LitElement {
     this.showStatus('Refreshing feeds...', 'loading');
 
     try {
-      const result = await this.sendMessage<{ success: boolean; fetched?: number; added?: number; error?: string }>({ type: 'REFRESH_FEEDS' });
+      const result = await sendMessage<{ success: boolean; fetched?: number; added?: number; error?: string }>({
+        type: 'REFRESH_FEEDS',
+      });
       if (result.success) {
         this.showStatus(`Refreshed ${result.fetched || 0} sources (${result.added || 0} new)`, 'success');
         await this.loadHistory();
       } else {
         this.showStatus(result.error || 'Refresh failed', 'error');
       }
-    } catch (error) {
+    } catch {
       this.showStatus('Refresh failed', 'error');
     } finally {
       this.refreshing = false;
@@ -121,7 +142,10 @@ export class RandomReaderPopup extends LitElement {
 
   private async updateSetting<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void> {
     const next = { ...this.settings, [key]: value };
-    const result = await this.sendMessage<{ success: boolean; error?: string }>({ type: 'SET_SETTINGS', settings: next });
+    const result = await sendMessage<{ success: boolean; error?: string }>({
+      type: 'PATCH_SETTINGS',
+      settings: { [key]: value },
+    });
     if (result.success) {
       this.settings = next;
     } else {
@@ -139,7 +163,8 @@ export class RandomReaderPopup extends LitElement {
   private ensureAudio(): void {
     try {
       if (!this.audioCtx || this.audioCtx.state === 'closed') {
-        const Ctx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+        const Ctx =
+          window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         this.audioCtx = new Ctx();
       }
       if (this.audioCtx.state === 'suspended') {
@@ -171,7 +196,11 @@ export class RandomReaderPopup extends LitElement {
         osc.stop(now + 0.25);
       });
       setTimeout(() => {
-        try { void ctx.close(); } catch { /* noop */ }
+        try {
+          void ctx.close();
+        } catch {
+          /* noop */
+        }
         this.audioCtx = null;
       }, 400);
     } catch {
@@ -225,8 +254,9 @@ export class RandomReaderPopup extends LitElement {
         </button>
       </header>
 
-      ${!this.settings.onboarded
-        ? html`
+      ${
+        !this.settings.onboarded
+          ? html`
             <div class="onboard-banner">
               <div class="onboard-banner-text">
                 <strong>Set up your interests</strong>
@@ -235,7 +265,8 @@ export class RandomReaderPopup extends LitElement {
               <button class="onboard-banner-btn" @click=${this.openSettings}>Set Up</button>
             </div>
           `
-        : ''}
+          : ''
+      }
 
       <div class="content">
         <button
@@ -252,8 +283,9 @@ export class RandomReaderPopup extends LitElement {
           <button class="tab-btn ${this.activeTab === 'history' ? 'active' : ''}" @click=${() => this.selectTab('history')}>History</button>
         </nav>
 
-        ${this.activeTab === 'roll'
-          ? html`
+        ${
+          this.activeTab === 'roll'
+            ? html`
               <div class="panel">
                 <div class="opt-card">
                   <span class="opt-label">Selection Pool</span>
@@ -280,10 +312,12 @@ export class RandomReaderPopup extends LitElement {
                 </div>
               </div>
             `
-          : ''}
+            : ''
+        }
 
-        ${this.activeTab === 'filters'
-          ? html`
+        ${
+          this.activeTab === 'filters'
+            ? html`
               <div class="panel">
                 <div class="opt-card">
                   <span class="opt-label">Max Article Age</span>
@@ -300,17 +334,20 @@ export class RandomReaderPopup extends LitElement {
                 </div>
               </div>
             `
-          : ''}
+            : ''
+        }
 
-        ${this.activeTab === 'history'
-          ? html`
+        ${
+          this.activeTab === 'history'
+            ? html`
               <div class="panel">
                 <div class="panel-row">
                   <span class="panel-label">Reading History</span>
                   <button class="btn-mini" @click=${this.loadHistory} title="Reload history">↻ Refresh</button>
                 </div>
-                ${this.history.length > 0
-                  ? html`
+                ${
+                  this.history.length > 0
+                    ? html`
                       <ul class="history-list">
                         ${this.history.slice(0, 15).map(
                           (item) => html`
@@ -320,21 +357,28 @@ export class RandomReaderPopup extends LitElement {
                                 ${item.sourceName || 'Unknown source'}${item.author ? ` · ${item.author}` : ''} · ${this.formatDate(item.fetchedAt)}
                               </div>
                             </li>
-                          `
+                          `,
                         )}
                       </ul>
                     `
-                  : html`<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 16px;">No reading history yet.</div>`}
+                    : html`<div style="font-size: 12px; color: var(--text-muted); text-align: center; padding: 16px;">No reading history yet.</div>`
+                }
+                <div style="font-size: 11px; color: var(--text-muted); text-align: center; padding: 4px 0 12px;">
+                  <button class="footer-link" style="font-size: 11px;" @click=${this.openSettings}>View full history →</button>
+                </div>
               </div>
             `
-          : ''}
+            : ''
+        }
 
-        ${this.statusMessage
-          ? html`<div class="status-pill ${this.statusType}">
+        ${
+          this.statusMessage
+            ? html`<div class="status-pill ${this.statusType}">
               ${this.statusType === 'loading' ? html`<span class="spinner"></span>` : ''}
               ${this.statusMessage}
             </div>`
-          : ''}
+            : ''
+        }
       </div>
 
       <footer>

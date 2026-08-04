@@ -17,6 +17,10 @@ export const SourceSchema = z.object({
   exclude: z.array(z.string()).optional(),
   feeds: z.array(z.string().url()).default([]),
   maxUrls: z.number().int().positive().optional(),
+  /** Timestamp until which the source is temporarily excluded from rolls. */
+  snoozedUntil: z.number().optional(),
+  /** Per-source max article age override (days); falls back to the global setting. */
+  maxAgeDays: z.number().int().positive().optional(),
 });
 
 export type Source = z.infer<typeof SourceSchema>;
@@ -36,7 +40,9 @@ export const ArticleSchema = z.object({
 export type Article = z.infer<typeof ArticleSchema>;
 
 export const SettingsSchema = z.object({
-  catalogUrl: z.string().default('https://raw.githubusercontent.com/GrishMahat/RandomReader/refs/heads/main/catalog.json'),
+  catalogUrl: z
+    .string()
+    .default('https://raw.githubusercontent.com/GrishMahat/RandomReader/refs/heads/main/catalog.json'),
   catalogMode: z.enum(['remote', 'local']).default('remote'),
   autoRefreshInterval: z.number().default(86400000),
   refreshOnStartup: z.boolean().default(true),
@@ -77,23 +83,56 @@ export const HistoryEntrySchema = z.object({
 
 export type HistoryEntry = z.infer<typeof HistoryEntrySchema>;
 
-export type StarredMap = Record<string, Article>;
+/**
+ * Minimal fields persisted for starred articles. Storing the full Article
+ * in both the pool and the starred map would double storage for those items;
+ * the remaining fields can be hydrated from the pool on read.
+ */
+export interface StarredEntry {
+  id: string;
+  url: string;
+  title: string;
+  sourceId: string;
+}
 
-export const DEFAULT_SETTINGS: Settings = {
-  catalogUrl: 'https://raw.githubusercontent.com/GrishMahat/RandomReader/refs/heads/main/catalog.json',
-  catalogMode: 'remote',
-  autoRefreshInterval: 86400000,
-  refreshOnStartup: true,
-  openIn: 'new_tab',
-  includeTags: [],
-  excludeTags: [],
-  theme: 'system',
-  selectionMode: 'unread_only',
-  maxAgeDays: 0,
-  keywordsInclude: [],
-  keywordsExclude: [],
-  tagMatchMode: 'any',
-  showPreview: true,
-  soundEffects: false,
-  onboarded: false,
-};
+export type StarredMap = Record<string, StarredEntry>;
+
+/** Derived from SettingsSchema so Zod defaults and this object are always in sync. */
+export const DEFAULT_SETTINGS: Settings = SettingsSchema.parse({});
+
+/** Central registry of all chrome.storage.local keys used across the extension. */
+export const STORAGE_KEYS = {
+  ARTICLES: 'articles',
+  TITLE_CACHE: 'titleCache',
+  ROLL_STATS: 'rollStats',
+  ROLL_HISTORY: 'rollHistory',
+  CATALOG: 'catalog',
+  CATALOG_VERSION: 'catalogVersion',
+  LOCAL_CATALOG: 'localCatalog',
+  SETTINGS: 'settings',
+  READ_HISTORY: 'readHistory',
+  STARRED: 'starred',
+} as const;
+
+export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];
+
+/** Type-safe Discriminated Union of all extension message protocols. */
+export type ExtensionMessage =
+  | { type: 'GET_RANDOM' }
+  | { type: 'OPEN_RANDOM' }
+  | { type: 'REFRESH_FEEDS' }
+  | { type: 'REFRESH_CATALOG' }
+  | { type: 'IMPORT_CATALOG'; raw: string }
+  | { type: 'GET_CATALOG_INFO' }
+  | { type: 'UPDATE_BLOCKED_DOMAINS'; domains: string[] }
+  | { type: 'GET_SETTINGS' }
+  | { type: 'SET_SETTINGS'; settings: Partial<Settings> }
+  | { type: 'PATCH_SETTINGS'; settings: Partial<Settings> }
+  | { type: 'GET_SOURCES' }
+  | { type: 'TOGGLE_SOURCE'; sourceId: string }
+  | { type: 'SNOOZE_SOURCE'; sourceId: string; until: number | null }
+  | { type: 'TOGGLE_STAR'; article: Article; starred?: boolean }
+  | { type: 'GET_ARTICLES' }
+  | { type: 'GET_HISTORY' }
+  | { type: 'CLEAR_HISTORY' }
+  | { type: 'CLEAR_DATA' };

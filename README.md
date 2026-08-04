@@ -6,12 +6,14 @@ A clean, distraction-free browser extension that opens random articles from cura
 
 ![GitHub License](https://img.shields.io/github/license/GrishMahat/RandomReader)
 
-> **Why is the UI so terrible and nothing seems to work?**
-> Don't look at me. I just wrote the extension. The UI has its own personal issues, and frankly, we don't talk about it.
+> **Note:** The UI is intentionally minimal — the point is getting you to an article fast. If something looks off, it's a bug; file an [issue](https://github.com/GrishMahat/RandomReader/issues).
 
 ## Features
 
 - 🎲 **Surprise Me** — opens a random article from your enabled sources in a new tab (or the current one)
+- ⌨️ **Keyboard shortcut** — press `Alt+Shift+R` (macOS: `Command+Shift+Y`) to open a random article without opening the popup. Remap it anytime under `chrome://extensions/shortcuts`
+- ⏸️ **Snooze sources** — hide a source from rolls for a day, a week, or a month without removing it, from the Sources page
+- ⏱️ **Per-source max age** — override the global article-age filter for individual sources
 - 🏷️ **Tag-based filtering** — include/exclude categories (e.g. `technology`, `web`, `security`) to narrow the pool
 - 🔍 **Smart filtering** — selection pool (unread / all / starred), max article age, and keyword include/exclude
 - 🕓 **Reading history** — every article opened via Surprise Me is tracked
@@ -27,6 +29,7 @@ A clean, distraction-free browser extension that opens random articles from cura
 - [Lit](https://lit.dev/) for UI
 - [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser) for RSS / Atom / sitemap parsing
 - [Zod](https://zod.dev/) for runtime schema validation
+- [Biome](https://biomejs.dev/) for linting and formatting
 - `browser.storage.local` for persistence, `chrome.alarms` for background refresh
 
 ## Getting Started
@@ -87,6 +90,8 @@ pnpm dev
 
 Runs the Vite dev server with CRXJS hot-reload.
 
+> **Note:** CRXJS hot-reloads the popup and options pages automatically, but MV3 service workers are **not** reloaded by HMR. After changing anything under `src/background/`, go to `chrome://extensions` and click the reload button on the extension. Otherwise you'll be debugging stale service worker code.
+
 ## Configuration
 
 ### Settings
@@ -143,11 +148,12 @@ You can import your own catalog via the **Catalog** section in Options (drag-and
 
 | Command | Description |
 | --- | --- |
-| `pnpm dev` | Vite dev server with HMR |
+| `pnpm dev` | Vite dev server with HMR (reload the service worker manually from `chrome://extensions`) |
 | `pnpm build` | Type-check then build to `dist/chrome/` |
 | `pnpm build:firefox` | Type-check then build to `dist/firefox/` |
 | `pnpm preview` | Preview the build |
-| `pnpm lint` | Type-check only (`tsc --noEmit`) |
+| `pnpm lint` | Type-check (`tsc --noEmit`) + Biome lint/format check |
+| `pnpm format` | Apply Biome formatting to the whole codebase |
 
 ## Project Structure
 
@@ -155,13 +161,14 @@ You can import your own catalog via the **Catalog** section in Options (drag-and
 catalog.json          # Source catalog (published to the gist used as default online catalog)
 manifest.config.ts    # Shared extension manifest (CRXJS)
 vite.config.ts        # Vite/CRXJS build config, per-browser manifest, release zips
+biome.json            # Linter & formatter config
 src/
 ├── background/       # Service worker: message router, feed refresh, alarms
 │   ├── main.ts       # Message handlers (GET_SOURCES, OPEN_RANDOM, GET_HISTORY, ...)
 │   ├── feeds.ts      # Fetch, parse, store articles; random selection
 │   ├── random.ts     # Open-a-random-article logic
 │   ├── catalog.ts    # Catalog load/import/validate
-│   └── cache.ts      # Feed cache helpers
+│   └── storage.ts    # History & starred storage helpers
 ├── popup/            # Popup UI (Lit)
 ├── options/          # Options page (Lit)
 ├── providers/        # RSS / Atom / sitemap parsers

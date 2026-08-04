@@ -1,18 +1,44 @@
 // Type declarations for Chrome Extensions API
 
 interface ChromeAlarms {
-  create(name?: string, alarmInfo?: { when?: number; periodInMinutes?: number } | { delayInMinutes?: number; periodInMinutes?: number }): void;
+  create(
+    name?: string,
+    alarmInfo?: { when?: number; periodInMinutes?: number } | { delayInMinutes?: number; periodInMinutes?: number },
+  ): void;
   get(name?: string): Promise<{ name: string; scheduledTime: number; periodInMinutes?: number } | undefined>;
   getAll(): Promise<Array<{ name: string; scheduledTime: number; periodInMinutes?: number }>>;
   clear(name?: string): Promise<boolean>;
   clearAll(): Promise<boolean>;
-  onAlarm: { addListener: (callback: (alarm: { name: string; scheduledTime: number; periodInMinutes?: number }) => void) => void; removeListener: (listener: (alarm: { name: string; scheduledTime: number; periodInMinutes?: number }) => void) => void; hasListener: (listener: (alarm: { name: string; scheduledTime: number; periodInMinutes?: number }) => void) => boolean };
+  onAlarm: {
+    addListener: (callback: (alarm: { name: string; scheduledTime: number; periodInMinutes?: number }) => void) => void;
+    removeListener: (
+      listener: (alarm: { name: string; scheduledTime: number; periodInMinutes?: number }) => void,
+    ) => void;
+    hasListener: (
+      listener: (alarm: { name: string; scheduledTime: number; periodInMinutes?: number }) => void,
+    ) => boolean;
+  };
 }
 
 interface ChromeRuntime {
-  onInstalled: { addListener: (callback: (details: { reason: 'install' | 'update' | 'chrome_update' | 'shared_module_update'; previousVersion?: string }) => void) => void };
+  onInstalled: {
+    addListener: (
+      callback: (details: {
+        reason: 'install' | 'update' | 'chrome_update' | 'shared_module_update';
+        previousVersion?: string;
+      }) => void,
+    ) => void;
+  };
   onStartup: { addListener: (callback: () => void) => void };
-  onMessage: { addListener: (callback: (message: unknown, sender: MessageSender, sendResponse: (response: unknown) => void) => boolean | void) => void };
+  onMessage: {
+    addListener: (
+      callback: (
+        message: unknown,
+        sender: MessageSender,
+        sendResponse: (response: unknown) => void,
+      ) => boolean | undefined,
+    ) => void;
+  };
   sendMessage(message: unknown, options?: { includeTlsChannelId?: boolean; toProxyScript?: boolean }): Promise<unknown>;
   sendMessage(message: unknown, callback: (response: unknown) => void): void;
   openOptionsPage(): void;
@@ -51,6 +77,10 @@ interface ChromeTabs {
   update(tabId: number, updateProperties: { url: string }): Promise<{ id: number; url: string }>;
 }
 
+interface ChromeCommands {
+  onCommand: { addListener: (callback: (command: string, tab?: { id: number; url: string }) => void) => void };
+}
+
 interface ChromeAction {
   setPopup(details: { popup: string }): void;
   setTitle(details: { title: string }): void;
@@ -64,4 +94,5 @@ declare namespace chrome {
   export const storage: ChromeStorage;
   export const tabs: ChromeTabs;
   export const action: ChromeAction;
+  export const commands: ChromeCommands;
 }

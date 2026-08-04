@@ -1,11 +1,21 @@
 import type { Article, Settings } from '../models';
-import { getRandomArticle, markArticleRead, recordRoll } from './feeds';
 import { getCatalog } from './catalog';
+import { getRandomArticle, markArticleRead, recordRoll } from './feeds';
 
-export async function handleOpenRandom(settings: Settings): Promise<{ success: boolean; article?: Article; streak?: number; odds?: number; sourceName?: string; error?: string }> {
+export async function handleOpenRandom(settings: Settings): Promise<{
+  success: boolean;
+  article?: Article;
+  streak?: number;
+  odds?: number;
+  sourceName?: string;
+  error?: string;
+}> {
   const article = await getRandomArticle(settings);
   if (!article) {
-    return { success: false, error: 'No articles match your filters. Try refreshing feeds or adjusting filters in Settings.' };
+    return {
+      success: false,
+      error: 'No articles match your filters. Try refreshing feeds or adjusting filters in Settings.',
+    };
   }
 
   const catalog = await getCatalog();
@@ -13,7 +23,7 @@ export async function handleOpenRandom(settings: Settings): Promise<{ success: b
   const roll = await recordRoll(article.sourceId);
   const enabledCount = Math.max((catalog?.sources ?? []).filter((s) => s.enabled).length, 1);
   const streak = roll.streak;
-  const odds = streak > 1 ? Math.round(Math.pow(enabledCount, streak - 1)) : 1;
+  const odds = streak > 1 ? Math.round(enabledCount ** (streak - 1)) : 1;
 
   try {
     if (settings.openIn === 'new_tab') {
@@ -33,7 +43,9 @@ export async function handleOpenRandom(settings: Settings): Promise<{ success: b
   }
 }
 
-export async function handleGetRandom(settings: Settings): Promise<{ success: boolean; article?: Article; error?: string }> {
+export async function handleGetRandom(
+  settings: Settings,
+): Promise<{ success: boolean; article?: Article; error?: string }> {
   const article = await getRandomArticle(settings);
   if (!article) {
     return { success: false, error: 'No articles available' };
