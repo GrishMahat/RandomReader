@@ -4,7 +4,7 @@ import { INTEREST_GROUPS, type InterestGroup } from '../config/interests';
 import type { Catalog, Settings, Source } from '../models';
 import { DEFAULT_SETTINGS } from '../models';
 import { sendMessage } from '../utils/messaging';
-import { applyTheme, subscribeToSystemTheme } from '../utils/theme';
+import { applyTheme, resolveTheme, subscribeToSystemTheme } from '../utils/theme';
 import { optionsStyles } from './options.styles';
 
 import './components/general-section';
@@ -477,6 +477,7 @@ export class RandomReaderOptions extends LitElement {
       <onboarding-screen
         .groups=${this.onboardingGroups}
         .saving=${this.saving}
+        data-theme=${resolveTheme(this.settings.theme)}
         @finish-onboarding=${this.handleFinishOnboarding}
         @skip-onboarding=${this.handleSkipOnboarding}
       ></onboarding-screen>
@@ -548,6 +549,7 @@ export class RandomReaderOptions extends LitElement {
         .settings=${this.settings}
         .stats=${this.readingStats}
         .saving=${this.saving}
+        data-theme=${resolveTheme(this.settings.theme)}
         @setting-change=${this.handleSettingChange}
         @save-settings=${this.saveSettings}
         @restore-defaults=${this.handleRestoreDefaults}
@@ -561,6 +563,7 @@ export class RandomReaderOptions extends LitElement {
       <sources-section
         .sources=${this.sources}
         .availableTags=${this.availableTags}
+        data-theme=${resolveTheme(this.settings.theme)}
         @toggle-source=${this.handleToggleSource}
         @snooze-source=${this.handleSnoozeSource}
       ></sources-section>
@@ -573,6 +576,7 @@ export class RandomReaderOptions extends LitElement {
         .settings=${this.settings}
         .availableTags=${this.availableTags}
         .saving=${this.saving}
+        data-theme=${resolveTheme(this.settings.theme)}
         @setting-change=${this.handleSettingChange}
         @save-settings=${this.saveSettings}
       ></filters-section>
@@ -583,6 +587,7 @@ export class RandomReaderOptions extends LitElement {
     return html`
       <history-section
         .history=${this.history}
+        data-theme=${resolveTheme(this.settings.theme)}
         @refresh-history=${this.loadHistory}
         @clear-history=${this.handleClearHistory}
         @export-history=${this.exportHistory}
@@ -596,6 +601,7 @@ export class RandomReaderOptions extends LitElement {
         .settings=${this.settings}
         .localCatalog=${this.localCatalog}
         .blockedDomains=${this.blockedDomains}
+        data-theme=${resolveTheme(this.settings.theme)}
         @setting-change=${this.handleSettingChange}
         @catalog-mode-change=${this.handleCatalogModeChange}
         @import-catalog-file=${this.handleImportFile}

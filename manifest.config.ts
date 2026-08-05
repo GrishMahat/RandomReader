@@ -2,7 +2,7 @@ export default {
   manifest_version: 3,
   name: 'Random Reader',
   description: 'Read random articles from curated sources',
-  version: '0.1.2',
+  version: '0.1.3',
   homepage_url: 'https://grishmahat.github.io/RandomReader/',
   permissions: ['storage', 'alarms', 'unlimitedStorage'],
   host_permissions: ['http://*/*', 'https://*/*'],

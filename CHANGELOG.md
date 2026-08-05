@@ -4,6 +4,8 @@ All notable changes to Random Reader are documented here. The format follows [Ke
 
 ## Unreleased
 
+## v0.1.3 - 2026-08-05
+
 ### Added
 - **CRXJS migration**: project now uses `@crxjs/vite-plugin` with `manifest.config.ts` for type-safe manifest, HMR via `chrome-extension://` CORS, and `vite-plugin-zip-pack` for releases
 - **Separate Chrome/Firefox release zips**: `random-reader-chrome.zip` and `random-reader-firefox.zip` with browser-specific manifests
@@ -37,6 +39,7 @@ All notable changes to Random Reader are documented here. The format follows [Ke
 - **README**: replaced the self-deprecating joke, documented the MV3 service-worker HMR limitation, refreshed scripts/structure/tech-stack sections
 
 ### Fixed
+- **Dark mode on options content sections**: the resolved theme (`data-theme`) is now propagated to the section components (`general-section`, `sources-section`, `filters-section`, `history-section`, `catalog-section`, `onboarding-screen`), so their backgrounds and cards follow the selected theme instead of staying light
 - **Options page error handling**: settings/sources/history/catalog loads now run through `Promise.allSettled` and surface an error toast on failure instead of showing a silent partial state; catalog-mode/import/restore reloads report partial failures
 - **Empty `<title>` on the logo SVG** (accessibility)
 - **Unused variable** left over in `fetchSource`
