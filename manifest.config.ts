@@ -27,7 +27,7 @@ export default {
   },
   commands: {
     'roll-random': {
-      suggested_key: { default: 'Alt+Shift+R', mac: 'Command+Shift+Y' },
+      suggested_key: { default: 'Ctrl+Period', mac: 'Command+Period' },
       description: 'Open a random article',
     },
   },

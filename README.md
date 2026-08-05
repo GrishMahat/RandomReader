@@ -11,7 +11,7 @@ A clean, distraction-free browser extension that opens random articles from cura
 ## Features
 
 - 🎲 **Surprise Me** — opens a random article from your enabled sources in a new tab (or the current one)
-- ⌨️ **Keyboard shortcut** — press `Alt+Shift+R` (macOS: `Command+Shift+Y`) to open a random article without opening the popup. Remap it anytime under `chrome://extensions/shortcuts`
+- ⌨️ **Keyboard shortcut** — press `Ctrl+.` (macOS: `Cmd+.`) to open a random article without opening the popup. Remap it anytime under `chrome://extensions/shortcuts`
 - ⏸️ **Snooze sources** — hide a source from rolls for a day, a week, or a month without removing it, from the Sources page
 - ⏱️ **Per-source max age** — override the global article-age filter for individual sources
 - 🏷️ **Tag-based filtering** — include/exclude categories (e.g. `technology`, `web`, `security`) to narrow the pool

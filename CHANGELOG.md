@@ -18,9 +18,10 @@ All notable changes to Random Reader are documented here. The format follows [Ke
 - **256px icon** and privacy policy (`PRIVACY.md`) for store submission
 - **Snooze sources**: a source can be snoozed for 1 day/week/month (or woken early) from the Sources page; snoozed sources are excluded from rolls until the time passes, and re-enabling a snoozed source clears its snooze
 - **Per-source max article age**: a source can override the global maximum article age filter, per source
-- **Roll shortcut**: pressing `Alt+Shift+R` (`Command+Shift+Y` on macOS) opens a random article without opening the popup (configurable under `chrome://extensions/shortcuts`)
+- **Roll shortcut**: pressing `Ctrl+.` (`Cmd+.` on macOS) opens a random article without opening the popup (configurable under `chrome://extensions/shortcuts`)
 
 ### Changed
+
 - **Options page refactored into Lit components**: `general-section`, `sources-section`, `filters-section`, `history-section`, `catalog-section`, and `onboarding-screen`; the main `render()` now delegates to named sub-template methods instead of one deeply nested template
 - **Central storage-key registry**: all `chrome.storage.local` keys consolidated into a single `STORAGE_KEYS` object in `models/index.ts` (no more scattered string literals)
 - **`DEFAULT_SETTINGS` derived from the Zod schema** so defaults and schema always stay in sync
