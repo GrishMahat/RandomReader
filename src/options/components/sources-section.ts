@@ -95,27 +95,17 @@ export class SourcesSection extends LitElement {
                 <table>
                   <thead>
                     <tr>
-                      <th class="col-width-on">On</th>
                       <th>Name</th>
                       <th>Type</th>
-                      <th>Snooze</th>
                       <th>Categories</th>
+                      <th>Snooze</th>
+                      <th class="col-width-on">On</th>
                     </tr>
                   </thead>
                   <tbody>
                     ${this.filteredSources.map(
                       (source) => html`
                         <tr class=${!source.enabled || this.isSnoozed(source) ? 'disabled' : ''}>
-                          <td>
-                            <label class="toggle-label">
-                              <input
-                                type="checkbox"
-                                .checked=${source.enabled}
-                                @change=${() => this.handleToggleSource(source.id)}
-                              />
-                              <span class="toggle-track"></span>
-                            </label>
-                          </td>
                           <td>
                             <div class="source-name">${source.name}</div>
                             <div class="source-url">${source.url}</div>
@@ -126,6 +116,13 @@ export class SourcesSection extends LitElement {
                               typeof source.maxAgeDays === 'number'
                                 ? html`<span class="tag-pill" title="Max article age override">≤ ${source.maxAgeDays}d</span>`
                                 : ''
+                            }
+                          </td>
+                          <td class="source-tags">
+                            ${
+                              (source.tags ?? []).length > 0
+                                ? (source.tags ?? []).map((t) => html`<span class="tag-pill">${t}</span>`)
+                                : html`<span class="text-muted">—</span>`
                             }
                           </td>
                           <td>
@@ -145,12 +142,15 @@ export class SourcesSection extends LitElement {
                                 `
                             }
                           </td>
-                          <td class="source-tags">
-                            ${
-                              (source.tags ?? []).length > 0
-                                ? (source.tags ?? []).map((t) => html`<span class="tag-pill">${t}</span>`)
-                                : html`<span class="text-muted">—</span>`
-                            }
+                          <td>
+                            <label class="toggle-label">
+                              <input
+                                type="checkbox"
+                                .checked=${source.enabled}
+                                @change=${() => this.handleToggleSource(source.id)}
+                              />
+                              <span class="toggle-track"></span>
+                            </label>
                           </td>
                         </tr>
                       `,

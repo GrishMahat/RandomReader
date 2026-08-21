@@ -187,7 +187,13 @@ export function parseSitemap(source: Source, xml: string): Article[] {
 
   const filteredUrls = rawUrls.filter((url) => isUrlAllowed(url, source));
   const maxUrls = source.maxUrls ?? 2000;
-  const cappedUrls = filteredUrls.slice(0, maxUrls);
+  let cappedUrls = filteredUrls;
+  if (filteredUrls.length > maxUrls) {
+    // Take a random contiguous window instead of always the head, so big
+    // sitemaps (e.g. 29k URLs) surface different eras across fetches.
+    const start = Math.floor(Math.random() * (filteredUrls.length - maxUrls + 1));
+    cappedUrls = filteredUrls.slice(start, start + maxUrls);
+  }
 
   return cappedUrls.map((url) => ({
     id: generateId(source.id, url),

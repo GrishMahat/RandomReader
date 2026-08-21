@@ -1019,6 +1019,12 @@ export const optionsStyles = css`
     min-width: 160px;
   }
 
+  /* Rows whose control is a toggle hug the trailing edge instead of
+     floating at the left of the reserved select column. */
+  .pref-control:has(.toggle-label) {
+    min-width: 0;
+  }
+
   .pref-control select,
   .pref-control input {
     width: 100%;

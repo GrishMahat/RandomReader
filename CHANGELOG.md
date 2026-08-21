@@ -2,9 +2,10 @@
 
 All notable changes to Random Reader are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/) and this project uses [Semantic Versioning](https://semver.org/).
 
-## Unreleased
+## v0.2.0 - 2026-08-21
 
 ### Added
+- **Deep archive discovery**: a new "Article Discovery" setting (Recent posts / Deep archive). Deep rolls pick a weighted-random source and fetch from somewhere inside its history instead of the latest feed page, best strategy first: WordPress REST `X-WP-TotalPages` probed once per source for an exact page count (30 of 46 paginating sources expose it, declared via the `wpTotalPages` flag so no depths are hardcoded in the catalog), then static `maxPages` for sites without an index, then `?paged=` / `?page=` probing with learned per-source depth, then plain feed fetch as fallback. An audit of all 136 catalog sources found 46 feeds (34%) support one of the pagination conventions; oversized sitemaps now also contribute a random window of their URL list instead of always the newest entries.
 - **Typed store seam**: new `src/background/store.ts` is the only module that touches `chrome.storage.local`. Every read passes through a Zod schema (`ArticleSchema`, `HistoryEntrySchema`, and `StarredMapSchema` now actually run, so corrupted or stale data falls back instead of flowing into the pool as a blind cast), writes are centralized for atomic multi-key updates, and `clearUserData()` derives its key list from `STORAGE_KEYS` instead of hand-enumerating them.
 - **Typed message responses**: a `MessageResponses` map in `models/index.ts` pairs every request type with one response interface. `sendMessage({ type })` returns exactly the declared payload, handler parameters narrow automatically, and all ad-hoc response shapes are gone (the duplicated `SettingsResponse` in popup and options, plus `GenericResponse`, `CatalogInfoResponse`, `ImportResponse`, and seven per-handler `Extract<>` casts).
 - **Compact catalog info**: `GET_CATALOG_INFO` ships version/updatedAt/source-count summaries over the message pipe instead of two full catalog objects (~35 KB saved per options open).
@@ -31,6 +32,10 @@ All notable changes to Random Reader are documented here. The format follows [Ke
 - **Stale-pool clobbering**: refreshing feeds could wipe stars and read flags applied while the fetch was in flight; title resolution could write back an outdated pool array.
 - **Drifted option menus**: popup and options offered different max-age choices for the same setting.
 - **Dead code removed**: unused `debounce()`/`clamp()` helpers, and the duplicate `browsers` entry in the Technology interest group (already covered by Web & Browsers).
+- **Options settings apply immediately**: every control on the Options page now persists through `PATCH_SETTINGS` the moment it changes, matching the popup's behavior, instead of silently reverting if the page closed without pressing Save Settings. The Article Discovery select also no longer renders blank when stored settings predate the field.
+
+### Known limitations
+- **Deep archive still skews toward newer posts**: a deep roll picks a random source from everything enabled, then a random page in that source, then a random article from that page. But only 41 of 135 sources have any depth to pick from (a WordPress `X-WP-TotalPages` index, a measured maximum, or a declared archive template); the other 94 are page-one-only feeds. For roughly 7 in 10 deep rolls, "a random page" therefore collapses to page 1, and the roll returns recent items. That is a real bias toward newer posts, not uniform randomness across history. Deep mode is still slightly more varied than Recent alone, but it does not yet deliver truly random picks from across a site's history. The next update will chip away at this bias step by step, starting with an option to restrict deep rolls to depth-capable sources only so every deep roll actually reaches into an archive, with the long-term goal of choosing uniformly at random from everything a source has published.
 
 ## v0.1.3 - 2026-08-05
 

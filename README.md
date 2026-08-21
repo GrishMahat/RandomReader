@@ -101,6 +101,7 @@ Runs the Vite dev server with CRXJS hot-reload.
 | Open Articles In | `new_tab` / `current_tab` | `new_tab` |
 | Feed Refresh Interval | 30 minutes to 24 hours | 24 hours |
 | Selection Pool | Unread Only / All / Starred Only | Unread Only |
+| Article Discovery | Recent posts / Deep archive | Recent posts |
 | Max Article Age | All time up to 3 months | All time |
 | Include / Exclude Categories | any catalog tag | none |
 | Keywords | include / exclude by title | none |
@@ -123,6 +124,7 @@ Sources live in `catalog.json` (repo root) and are served from the repo itself (
 
 - **`type`** is the feed format: `rss`, `atom`, or `sitemap`.
 - **`include`** / **`exclude`** (optional) are path-prefix filters applied to the article URL.
+- **`archive`** (optional) declares paginated history for Deep archive discovery, e.g. `"archive": { "template": "https://example.com/feed/?paged={n}", "wpTotalPages": true }`. With `wpTotalPages: true` the exact depth is discovered live from the WordPress REST API (`X-WP-TotalPages`) and cached per source, so no depth numbers live in the catalog. Without the flag, `maxPages` is the static depth; an audit of the catalog found ~34% of feeds respond to one of the pagination conventions.
 
 `include`/`exclude` matter mainly for **`sitemap`** sources, which list every URL on a site, landing and category pages included. Path filters keep only the real articles (for example `"/about/news/"` keeps news posts while `"/archive/"` drops archive pages).
 

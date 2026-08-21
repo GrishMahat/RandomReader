@@ -21,6 +21,19 @@ export const SourceSchema = z.object({
   snoozedUntil: z.number().optional(),
   /** Per-source max article age override (days); falls back to the global setting. */
   maxAgeDays: z.number().int().positive().optional(),
+  /**
+   * Declared archive pagination for deep rolls. `{n}` is replaced with a
+   * page number. Set `wpTotalPages: true` on WordPress sites so the exact
+   * depth is discovered live from X-WP-TotalPages and cached per source;
+   * otherwise `maxPages` is the static depth used as-is.
+   */
+  archive: z
+    .object({
+      template: z.string().url(),
+      wpTotalPages: z.boolean().optional(),
+      maxPages: z.number().int().positive().optional(),
+    })
+    .optional(),
 });
 
 export type Source = z.infer<typeof SourceSchema>;
@@ -51,6 +64,13 @@ export const SettingsSchema = z.object({
   excludeTags: z.array(z.string()).default([]),
   theme: z.enum(['light', 'dark', 'system']).default('system'),
   selectionMode: z.enum(['unread_only', 'all', 'starred_only']).default('unread_only'),
+  /**
+   * Where rolls come from: 'recent' samples the stored pool (latest feed
+   * items); 'deep' fetches live from a random source's older pages
+   * (`?paged=`/`?page=` where the site supports it, ~34% of the catalog),
+   * falling back to recent behavior everywhere else.
+   */
+  discoveryMode: z.enum(['recent', 'deep']).default('recent'),
   maxAgeDays: z.number().default(0),
   keywordsInclude: z.array(z.string()).default([]),
   keywordsExclude: z.array(z.string()).default([]),
@@ -118,6 +138,8 @@ export const STORAGE_KEYS = {
   SETTINGS: 'settings',
   READ_HISTORY: 'readHistory',
   STARRED: 'starred',
+  /** Learned pagination depth per source id, for deep rolls. */
+  SOURCE_DEPTH: 'sourceDepth',
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

@@ -142,6 +142,13 @@ export class RandomReaderOptions extends LitElement {
       applyTheme(this, value as Settings['theme']);
       syncDocumentBackground(value as Settings['theme']);
     }
+    // Persist immediately so a change survives closing the page without
+    // pressing Save (same behavior as the popup's per-control saves).
+    void sendMessage({ type: 'PATCH_SETTINGS', settings: { [key]: value } })
+      .then((result) => {
+        if (!result.success) this.showStatus(result.error || 'Failed to save setting', 'error');
+      })
+      .catch(() => this.showStatus('Failed to save setting', 'error'));
   }
 
   private async handleToggleSource(e: CustomEvent<{ sourceId: string }>): Promise<void> {

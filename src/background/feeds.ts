@@ -22,6 +22,14 @@ const TITLE_CACHE_MAX = 5_000;
 const POOL_CAP_BYTES = 7 * 1024 * 1024;
 /** How many recent source IDs to remember for diversity weighting. */
 const ROLL_HISTORY_LENGTH = 10;
+/** Default assumed pagination depth when a source hasn't been probed yet. */
+const DEEP_DEFAULT_DEPTH = 10;
+/** Max sources tried per deep roll before falling back to recent behavior. */
+const DEEP_MAX_ATTEMPTS = 4;
+/** Hard ceiling for learned pagination depth. */
+const MAX_LEARNED_DEPTH = 200_000;
+/** WordPress feeds show the site's "posts per page" setting; 10 is the default. */
+const FEED_POSTS_PER_PAGE = 10;
 /** Timeout for resolving a real page title. */
 const TITLE_TIMEOUT_MS = 10_000;
 /** Timeout for fetching one source's feed(s). */
@@ -395,6 +403,177 @@ export async function refreshRandomBatch(size = BATCH_SIZE_ALARM): Promise<Batch
   return { fetched, added: 0, error: fetched > 0 ? 'No new articles were added' : 'All sources failed to fetch' };
 }
 
+// ─── Deep rolls ───────────────────────────────────────────────────────────────
+
+const SourceDepthSchema = z.record(z.string(), z.number());
+
+/**
+ * Learned pagination depth per source. Deep rolls pick a random page in
+ * [1, depth]; a miss (empty page) shrinks the remembered depth so later
+ * rolls stop wasting attempts past the site's real maximum. A stored 0 is
+ * a sentinel meaning "no WordPress index available; don't re-probe".
+ */
+async function getSourceDepths(): Promise<Record<string, number>> {
+  return loadStore(STORAGE_KEYS.SOURCE_DEPTH, SourceDepthSchema, {});
+}
+
+async function rememberSourceDepth(sourceId: string, depth: number): Promise<void> {
+  await updateStore(STORAGE_KEYS.SOURCE_DEPTH, SourceDepthSchema, {}, (depths) => ({
+    ...depths,
+    [sourceId]: Math.max(2, Math.min(depth, MAX_LEARNED_DEPTH)),
+  }));
+}
+
+async function rememberNoIndex(sourceId: string): Promise<void> {
+  await updateStore(STORAGE_KEYS.SOURCE_DEPTH, SourceDepthSchema, {}, (depths) => ({
+    ...depths,
+    [sourceId]: 0,
+  }));
+}
+
+/**
+ * Ask the site's WordPress REST API for its exact post count. With
+ * `per_page=1` the X-WP-TotalPages header equals total posts, which converts
+ * to feed pages via the default posts-per-page. Returns null for non-WP
+ * sites, disabled REST routes, or blocked requests.
+ */
+async function probeWpTotalPages(source: Source): Promise<number | null> {
+  let origin: string | null = null;
+  try {
+    origin = new URL(source.url).origin;
+  } catch {
+    return null;
+  }
+  try {
+    const res = await fetchWithTimeout(`${origin}/wp-json/wp/v2/posts?per_page=1&_fields=id`, {
+      timeout: FEED_TIMEOUT_MS,
+    });
+    if (!res.ok) return null;
+    const total = Number(res.headers.get('x-wp-totalpages'));
+    if (!Number.isFinite(total) || total <= 0) return null;
+    return Math.ceil(total / FEED_POSTS_PER_PAGE);
+  } catch {
+    return null;
+  }
+}
+
+/** WordPress-style pagination variants; ~34% of the catalog responds to one of these. */
+function pagedVariants(url: string, page: number): string[] {
+  const sep = url.includes('?') ? '&' : '?';
+  return [`${url}${sep}paged=${page}`, `${url}${sep}page=${page}`];
+}
+
+/** Fetch page N of a paginated feed; null when both variants come back empty. */
+async function fetchPagedArticles(source: Source, page: number): Promise<Article[] | null> {
+  for (const url of pagedVariants(source.url, page)) {
+    try {
+      const res = await fetchWithTimeout(url, { timeout: FEED_TIMEOUT_MS });
+      if (!res.ok) continue;
+      const parsed = parseFeed(source, await res.text());
+      if (parsed.length > 0) return deduplicateArticles(parsed);
+    } catch {
+      // try the next variant
+    }
+  }
+  return null;
+}
+
+/**
+ * Fetch articles from anywhere in a source's history rather than just its
+ * latest feed page. Strategy, best-first:
+ *  1. live index: WordPress REST X-WP-TotalPages, probed once and cached
+ *  2. declared `archive` template from the catalog
+ *  3. random page in [1, knownDepth] via ?paged=/?page= probing
+ *  4. plain feed fetch (recent items), so deep never returns nothing
+ */
+async function fetchDeepArticles(source: Source): Promise<Article[]> {
+  const depths = await getSourceDepths();
+  let depth = depths[source.id];
+
+  // Nothing learned yet: ask the site for its exact index once, then cache.
+  if (depth === undefined) {
+    const discovered = await probeWpTotalPages(source);
+    if (discovered !== null) {
+      depth = discovered;
+      await rememberSourceDepth(source.id, discovered);
+    } else {
+      await rememberNoIndex(source.id);
+    }
+  }
+
+  // Static depth from the catalog: only for sources NOT flagged for live
+  // discovery (non-WP sites where no index exists).
+  if ((!depth || depth <= 0) && source.archive && !source.archive.wpTotalPages && source.archive.maxPages) {
+    const page = 1 + Math.floor(Math.random() * source.archive.maxPages);
+    const url = source.archive.template.replace('{n}', String(page));
+    try {
+      const res = await fetchWithTimeout(url, { timeout: FEED_TIMEOUT_MS });
+      if (res.ok) {
+        const parsed = deduplicateArticles(parseFeed(source, await res.text()));
+        if (parsed.length > 0) return parsed;
+      }
+    } catch {
+      // fall through to the heuristic below
+    }
+  }
+
+  const effective = depth && depth > 0 ? depth : DEEP_DEFAULT_DEPTH;
+  const page = 1 + Math.floor(Math.random() * effective);
+
+  if (page > 1) {
+    const paged = await fetchPagedArticles(source, page);
+    if (paged && paged.length > 0) return paged;
+    // Page beyond the site's real max: shrink what we believe so future
+    // deep rolls land inside the archive instead of past it.
+    await rememberSourceDepth(source.id, Math.max(2, page - 1));
+  }
+
+  return fetchSource(source);
+}
+
+/**
+ * Live deep roll: pick a weighted-random enabled source, pull from somewhere
+ * inside its history, filter, and return one article. Tries a handful of
+ * sources before giving up (caller then falls back to the pool path).
+ */
+export async function fetchDeepRandomArticle(settings: Settings): Promise<Article | null> {
+  const catalog = await getCatalog();
+  const sources = getEnabledSources(catalog);
+  if (sources.length === 0) return null;
+
+  const starredMap = await getStarredMap();
+  const readHistory = await getReadHistory();
+  const readIds = new Set(readHistory.map((h) => h.id));
+  const history = await getRollHistory();
+  const tried = new Set<string>();
+  const blockedDomains = normalizeBlockedDomains(catalog?.blockedDomains ?? []);
+
+  for (let attempt = 0; attempt < DEEP_MAX_ATTEMPTS && tried.size < sources.length; attempt++) {
+    const remaining = sources.filter((s) => !tried.has(s.id));
+    if (remaining.length === 0) break;
+    const source = pickWeighted(remaining, (s) => sourceWeight(s.id, history));
+    if (!source) break;
+    tried.add(source.id);
+
+    const articles = await fetchDeepArticles(source);
+    if (articles.length === 0) continue;
+
+    const candidates = articles.map((a) => ({
+      ...a,
+      read: readIds.has(a.id),
+      starred: Boolean(starredMap[a.id]),
+    }));
+    const filtered = filterArticles(candidates, settings, catalog, blockedDomains);
+    if (filtered.length === 0) continue;
+
+    const picked = pickWeighted(filtered, (a) => sourceWeight(a.sourceId, history));
+    if (!picked) continue;
+    return resolveArticleTitle(picked);
+  }
+
+  return null;
+}
+
 // ─── Random selection ─────────────────────────────────────────────────────────
 
 /**
@@ -448,6 +627,14 @@ export async function fetchRandomArticles(settings: Settings): Promise<Article |
 
 export async function getRandomArticle(settings?: Settings): Promise<Article | null> {
   const opts = settings ?? (await getSettings());
+
+  // Deep mode: reach into a random source's history instead of the stored pool.
+  if ((opts.discoveryMode ?? 'recent') === 'deep') {
+    const deep = await fetchDeepRandomArticle(opts);
+    if (deep) return deep;
+    // Deep failed everywhere; fall through to the pool so the user still gets an article.
+  }
+
   const articles = await getArticles();
 
   if (articles.length > 0) {

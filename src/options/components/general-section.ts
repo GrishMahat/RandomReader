@@ -102,6 +102,22 @@ export class GeneralSection extends LitElement {
 
           <div class="pref-row">
             <div>
+              <div class="pref-label">Article Discovery</div>
+              <div class="pref-desc">Recent pulls the latest posts from your pool; Deep reaches back into older archives on sites that support it</div>
+            </div>
+            <div class="pref-control">
+              <select
+                .value=${this.settings.discoveryMode ?? 'recent'}
+                @change=${(e: Event) => this.emitSetting('discoveryMode', (e.target as HTMLSelectElement).value as Settings['discoveryMode'])}
+              >
+                <option value="recent">Recent posts</option>
+                <option value="deep">Deep archive</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pref-row">
+            <div>
               <div class="pref-label">Refresh on Startup</div>
               <div class="pref-desc">Fetch a batch of feeds when the browser starts</div>
             </div>
