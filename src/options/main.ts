@@ -1,8 +1,10 @@
-import { html, LitElement, type PropertyValues } from 'lit';
+import { html, LitElement, type PropertyValues, type TemplateResult } from 'lit';
 import { customElement, state } from 'lit/decorators.js';
 import { INTEREST_GROUPS, type InterestGroup } from '../config/interests';
-import type { Catalog, Settings, Source } from '../models';
+import type { Settings, Source } from '../models';
 import { DEFAULT_SETTINGS } from '../models';
+import { DAY_MS } from '../utils';
+import { iconBroadcast, iconClock, iconFilter, iconPackage, iconSliders, iconX } from '../utils/icons';
 import { sendMessage } from '../utils/messaging';
 import { applyTheme, resolveTheme, subscribeToSystemTheme } from '../utils/theme';
 import { optionsStyles } from './options.styles';
@@ -18,37 +20,20 @@ import type { LocalCatalogInfo } from './components/catalog-section';
 import type { ReadingStats } from './components/general-section';
 import type { HistoryItem } from './components/history-section';
 
-interface SettingsResponse {
-  success: boolean;
-  settings?: Settings;
-  error?: string;
-}
-
-interface GenericResponse {
-  success: boolean;
-  fetched?: number;
-  added?: number;
-  count?: number;
-  error?: string;
-}
-
-interface CatalogInfoResponse {
-  success: boolean;
-  mode?: Settings['catalogMode'];
-  catalogUrl?: string;
-  local?: Catalog | null;
-  remote?: Catalog | null;
-  blockedDomains?: string[];
-  error?: string;
-}
-
-interface ImportResponse {
-  success: boolean;
-  error?: string;
-  catalog?: { sources: Array<{ name: string; type: string; tags?: string[] }> };
-}
-
 type Section = 'general' | 'sources' | 'filters' | 'history' | 'catalog';
+
+/** Backdrop colors matching the token values, for edges/overscroll outside the shadow root. */
+const DOC_BG = { light: '#f7f7f5', dark: '#131315' } as const;
+
+/**
+ * Keep the document itself (outside the shadow root) in sync with the chosen
+ * theme so overscroll and resize edges never flash white in dark mode.
+ */
+function syncDocumentBackground(theme: Settings['theme']): void {
+  const resolved = resolveTheme(theme);
+  document.documentElement.style.background = DOC_BG[resolved];
+  document.documentElement.style.colorScheme = resolved;
+}
 
 @customElement('random-reader-options')
 export class RandomReaderOptions extends LitElement {
@@ -80,6 +65,7 @@ export class RandomReaderOptions extends LitElement {
       this.showStatus('Some data could not be loaded. Try reloading the page.', 'error');
     }
     applyTheme(this, this.settings.theme);
+    syncDocumentBackground(this.settings.theme);
     this.unsubscribeTheme = subscribeToSystemTheme(this, () => this.settings.theme);
   }
 
@@ -90,16 +76,17 @@ export class RandomReaderOptions extends LitElement {
   }
 
   private async loadSettings(): Promise<void> {
-    const result = await sendMessage<SettingsResponse>({ type: 'GET_SETTINGS' });
+    const result = await sendMessage({ type: 'GET_SETTINGS' });
     if (!result.success || !result.settings) {
       throw new Error(result.error || 'Failed to load settings');
     }
     this.settings = result.settings;
     applyTheme(this, this.settings.theme);
+    syncDocumentBackground(this.settings.theme);
   }
 
   private async loadSources(): Promise<void> {
-    const result = await sendMessage<{ success: boolean; sources?: Source[]; error?: string }>({ type: 'GET_SOURCES' });
+    const result = await sendMessage({ type: 'GET_SOURCES' });
     if (!result.success || !result.sources) {
       throw new Error(result.error || 'Failed to load sources');
     }
@@ -107,7 +94,7 @@ export class RandomReaderOptions extends LitElement {
   }
 
   private async loadCatalogInfo(): Promise<void> {
-    const result = await sendMessage<CatalogInfoResponse>({ type: 'GET_CATALOG_INFO' });
+    const result = await sendMessage({ type: 'GET_CATALOG_INFO' });
     if (!result.success) {
       throw new Error(result.error || 'Failed to load catalog info');
     }
@@ -115,15 +102,13 @@ export class RandomReaderOptions extends LitElement {
       this.settings = { ...this.settings, catalogMode: result.mode };
     }
     this.localCatalog = result.local
-      ? { version: result.local.version, updatedAt: result.local.updatedAt, sources: result.local.sources.length }
+      ? { version: result.local.version, updatedAt: result.local.updatedAt, sources: result.local.sourceCount }
       : null;
     this.blockedDomains = result.blockedDomains ?? [];
   }
 
   private async loadHistory(): Promise<void> {
-    const result = await sendMessage<{ success: boolean; history?: HistoryItem[]; error?: string }>({
-      type: 'GET_HISTORY',
-    });
+    const result = await sendMessage({ type: 'GET_HISTORY' });
     if (!result.success || !result.history) {
       throw new Error(result.error || 'Failed to load history');
     }
@@ -134,7 +119,7 @@ export class RandomReaderOptions extends LitElement {
     this.saving = true;
     this.clearStatus();
     try {
-      const result = await sendMessage<{ success: boolean; error?: string }>({
+      const result = await sendMessage({
         type: 'SET_SETTINGS',
         settings: this.settings,
       });
@@ -155,11 +140,12 @@ export class RandomReaderOptions extends LitElement {
     this.settings = { ...this.settings, [key]: value };
     if (key === 'theme') {
       applyTheme(this, value as Settings['theme']);
+      syncDocumentBackground(value as Settings['theme']);
     }
   }
 
   private async handleToggleSource(e: CustomEvent<{ sourceId: string }>): Promise<void> {
-    const result = await sendMessage<{ success: boolean; sources?: Source[]; error?: string }>({
+    const result = await sendMessage({
       type: 'TOGGLE_SOURCE',
       sourceId: e.detail.sourceId,
     });
@@ -171,8 +157,8 @@ export class RandomReaderOptions extends LitElement {
   }
 
   private async handleSnoozeSource(e: CustomEvent<{ sourceId: string; days: number }>): Promise<void> {
-    const until = e.detail.days > 0 ? Date.now() + e.detail.days * 24 * 60 * 60 * 1000 : null;
-    const result = await sendMessage<{ success: boolean; sources?: Source[]; error?: string }>({
+    const until = e.detail.days > 0 ? Date.now() + e.detail.days * DAY_MS : null;
+    const result = await sendMessage({
       type: 'SNOOZE_SOURCE',
       sourceId: e.detail.sourceId,
       until,
@@ -194,7 +180,7 @@ export class RandomReaderOptions extends LitElement {
   private async handleImportFile(e: CustomEvent<{ file: File }>): Promise<void> {
     try {
       const text = await e.detail.file.text();
-      const result = await sendMessage<ImportResponse>({ type: 'IMPORT_CATALOG', raw: text });
+      const result = await sendMessage({ type: 'IMPORT_CATALOG', raw: text });
       if (result.success) {
         this.showStatus(
           `Catalog "${e.detail.file.name}" imported (${result.catalog?.sources.length ?? 0} sources)`,
@@ -228,7 +214,7 @@ export class RandomReaderOptions extends LitElement {
     const domain = e.detail.domain.trim().toLowerCase();
     if (!domain || this.blockedDomains.includes(domain)) return;
     const next = [...this.blockedDomains, domain];
-    const result = await sendMessage<{ success: boolean; blockedDomains?: string[]; error?: string }>({
+    const result = await sendMessage({
       type: 'UPDATE_BLOCKED_DOMAINS',
       domains: next,
     });
@@ -242,7 +228,7 @@ export class RandomReaderOptions extends LitElement {
 
   private async handleRemoveBlockedDomain(e: CustomEvent<{ domain: string }>): Promise<void> {
     const next = this.blockedDomains.filter((d) => d !== e.detail.domain);
-    const result = await sendMessage<{ success: boolean; blockedDomains?: string[]; error?: string }>({
+    const result = await sendMessage({
       type: 'UPDATE_BLOCKED_DOMAINS',
       domains: next,
     });
@@ -262,6 +248,7 @@ export class RandomReaderOptions extends LitElement {
     this.settings = { ...DEFAULT_SETTINGS };
     await this.saveSettings();
     applyTheme(this, this.settings.theme);
+    syncDocumentBackground(this.settings.theme);
     const results = await Promise.allSettled([this.loadCatalogInfo(), this.loadSources()]);
     if (results.some((r) => r.status === 'rejected')) {
       this.showStatus('Defaults restored, but the source list failed to reload.', 'error');
@@ -270,7 +257,7 @@ export class RandomReaderOptions extends LitElement {
 
   private async handleClearData(): Promise<void> {
     if (!window.confirm('Clear reading history and all stored articles? Source toggles and settings are kept.')) return;
-    const result = await sendMessage<GenericResponse>({ type: 'CLEAR_DATA' });
+    const result = await sendMessage({ type: 'CLEAR_DATA' });
     if (result.success) {
       this.showStatus('Cleared articles and history', 'success');
       await this.loadHistory();
@@ -281,7 +268,7 @@ export class RandomReaderOptions extends LitElement {
 
   private async handleClearHistory(): Promise<void> {
     if (!window.confirm('Clear your reading history?')) return;
-    const result = await sendMessage<GenericResponse>({ type: 'CLEAR_HISTORY' });
+    const result = await sendMessage({ type: 'CLEAR_HISTORY' });
     if (result.success) {
       this.showStatus('History cleared', 'success');
       await this.loadHistory();
@@ -293,7 +280,7 @@ export class RandomReaderOptions extends LitElement {
   private async handleRefreshCatalog(): Promise<void> {
     this.showStatus('Syncing catalog...', 'info');
     try {
-      const result = await sendMessage<GenericResponse>({ type: 'REFRESH_CATALOG' });
+      const result = await sendMessage({ type: 'REFRESH_CATALOG' });
       if (result.success) {
         this.showStatus('Catalog synced', 'success');
         try {
@@ -312,7 +299,7 @@ export class RandomReaderOptions extends LitElement {
   private async handleRefreshFeedsNow(): Promise<void> {
     this.showStatus('Refreshing feeds...', 'info');
     try {
-      const result = await sendMessage<GenericResponse>({ type: 'REFRESH_FEEDS' });
+      const result = await sendMessage({ type: 'REFRESH_FEEDS' });
       if (result.success) {
         this.showStatus(`Refreshed: ${result.fetched || 0} sources (${result.added || 0} new articles)`, 'success');
       } else {
@@ -331,7 +318,7 @@ export class RandomReaderOptions extends LitElement {
       url: h.url,
       source: h.sourceName || h.sourceId,
       author: h.author || '',
-      visitedAt: new Date(h.fetchedAt).toISOString(),
+      openedAt: new Date(h.openedAt).toISOString(),
     }));
 
     let content: string;
@@ -339,10 +326,10 @@ export class RandomReaderOptions extends LitElement {
     let ext: string;
     if (format === 'csv') {
       const esc = (v: string): string => `"${String(v ?? '').replace(/"/g, '""')}"`;
-      const header = ['title', 'url', 'source', 'author', 'visitedAt'];
+      const header = ['title', 'url', 'source', 'author', 'openedAt'];
       content = [
         header.join(','),
-        ...rows.map((r) => [r.title, r.url, r.source, r.author, r.visitedAt].map(esc).join(',')),
+        ...rows.map((r) => [r.title, r.url, r.source, r.author, r.openedAt].map(esc).join(',')),
       ].join('\n');
       mime = 'text/csv';
       ext = 'csv';
@@ -363,8 +350,8 @@ export class RandomReaderOptions extends LitElement {
 
   private get readingStats(): ReadingStats {
     const total = this.history.length;
-    const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const last7 = this.history.filter((h) => h.fetchedAt >= cutoff).length;
+    const cutoff = Date.now() - 7 * DAY_MS;
+    const last7 = this.history.filter((h) => h.openedAt >= cutoff).length;
     const bySource = new Map<string, number>();
     for (const h of this.history) {
       const name = h.sourceName || h.sourceId;
@@ -497,17 +484,17 @@ export class RandomReaderOptions extends LitElement {
   }
 
   private renderSidebar(): ReturnType<typeof html> {
-    const navItems: { id: Section; label: string; icon: string; badge?: string }[] = [
-      { id: 'general', label: 'General', icon: '⚙️' },
-      { id: 'sources', label: 'Sources', icon: '📡', badge: String(this.sources.length) },
-      { id: 'filters', label: 'Filters', icon: '⚗️' },
+    const navItems: { id: Section; label: string; icon: TemplateResult; badge?: string }[] = [
+      { id: 'general', label: 'General', icon: iconSliders },
+      { id: 'sources', label: 'Sources', icon: iconBroadcast, badge: String(this.sources.length) },
+      { id: 'filters', label: 'Filters', icon: iconFilter },
       {
         id: 'history',
         label: 'History',
-        icon: '🕓',
+        icon: iconClock,
         badge: this.history.length > 0 ? String(this.history.length) : '',
       },
-      { id: 'catalog', label: 'Catalog', icon: '📦' },
+      { id: 'catalog', label: 'Catalog', icon: iconPackage },
     ];
     return html`
       <nav class="sidebar">
@@ -616,7 +603,7 @@ export class RandomReaderOptions extends LitElement {
   private renderToast(): ReturnType<typeof html> {
     return html`<div class="toast ${this.statusType}" role="status">
       <span class="toast-message">${this.statusMessage}</span>
-      <button class="toast-close" @click=${this.clearStatus} aria-label="Dismiss">×</button>
+      <button class="toast-close" @click=${this.clearStatus} aria-label="Dismiss"><span class="icon">${iconX}</span></button>
     </div>`;
   }
 }

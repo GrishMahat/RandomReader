@@ -1,6 +1,8 @@
 import { html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { Source } from '../../models';
+import { isSnoozed } from '../../utils';
+import { formatTimestamp, SNOOZE_DAYS } from '../../utils/ui';
 import { optionsStyles } from '../options.styles';
 
 @customElement('sources-section')
@@ -40,13 +42,6 @@ export class SourcesSection extends LitElement {
     );
   }
 
-  /** Snooze durations offered in the UI (days). */
-  private static readonly SNOOZE_DAYS = [
-    { value: 1, label: '1 day' },
-    { value: 7, label: '1 week' },
-    { value: 30, label: '1 month' },
-  ] as const;
-
   private handleSnoozeSource(sourceId: string, days: number): void {
     this.dispatchEvent(
       new CustomEvent('snooze-source', {
@@ -58,11 +53,11 @@ export class SourcesSection extends LitElement {
   }
 
   private isSnoozed(source: Source): boolean {
-    return typeof source.snoozedUntil === 'number' && source.snoozedUntil > Date.now();
+    return isSnoozed(source);
   }
 
   private formatSnoozeDate(ts: number | undefined): string {
-    return ts ? new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '';
+    return formatTimestamp(ts);
   }
 
   render() {
@@ -145,7 +140,7 @@ export class SourcesSection extends LitElement {
                                 : html`
                                   <select class="snooze-select" @change=${(e: Event) => this.handleSnoozeSource(source.id, Number((e.target as HTMLSelectElement).value))}>
                                     <option value="0">Snooze…</option>
-                                    ${SourcesSection.SNOOZE_DAYS.map((opt) => html`<option value=${opt.value}>${opt.label}</option>`)}
+                                    ${SNOOZE_DAYS.map((opt) => html`<option value=${opt.value}>${opt.label}</option>`)}
                                   </select>
                                 `
                             }

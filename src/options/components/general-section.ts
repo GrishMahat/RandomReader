@@ -1,6 +1,7 @@
 import { html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { Settings } from '../../models';
+import { emitSettingChange, OPEN_TARGETS, SELECTION_MODES } from '../../utils/ui';
 import { optionsStyles } from '../options.styles';
 
 export interface ReadingStats {
@@ -27,14 +28,8 @@ export class GeneralSection extends LitElement {
   @property({ type: Object }) stats!: ReadingStats;
   @property({ type: Boolean }) saving = false;
 
-  private emitSettingChange<K extends keyof Settings>(key: K, value: Settings[K]): void {
-    this.dispatchEvent(
-      new CustomEvent('setting-change', {
-        detail: { key, value },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+  private emitSetting(key: keyof Settings, value: unknown): void {
+    emitSettingChange(this, key, value as never);
   }
 
   private emitSave(): void {
@@ -68,24 +63,22 @@ export class GeneralSection extends LitElement {
               <select
                 id="openIn"
                 .value=${this.settings.openIn}
-                @change=${(e: Event) => this.emitSettingChange('openIn', (e.target as HTMLSelectElement).value as Settings['openIn'])}
+                @change=${(e: Event) => this.emitSetting('openIn', (e.target as HTMLSelectElement).value as Settings['openIn'])}
               >
-                <option value="new_tab">New Tab</option>
-                <option value="current_tab">Current Tab</option>
+                ${OPEN_TARGETS.map((opt) => html`<option value=${opt.value}>${opt.label}</option>`)}
               </select>
             </div>
           </div>
 
           <div class="pref-row">
             <div>
-              <div class="pref-label">Feed Refresh Interval</div>
-              <div class="pref-desc">How often feeds are fetched in the background</div>
+              <div class="pref-label">Feed Refresh Interval</div>              <div class="pref-desc">How often feeds are fetched in the background</div>
             </div>
             <div class="pref-control">
               <select
                 id="autoRefreshInterval"
                 .value=${String(this.settings.autoRefreshInterval)}
-                @change=${(e: Event) => this.emitSettingChange('autoRefreshInterval', Number((e.target as HTMLSelectElement).value))}
+                @change=${(e: Event) => this.emitSetting('autoRefreshInterval', Number((e.target as HTMLSelectElement).value))}
               >
                 ${REFRESH_INTERVALS_MS.map((opt) => html`<option value=${opt.value}>${opt.label}</option>`)}
               </select>
@@ -100,11 +93,9 @@ export class GeneralSection extends LitElement {
             <div class="pref-control">
               <select
                 .value=${this.settings.selectionMode}
-                @change=${(e: Event) => this.emitSettingChange('selectionMode', (e.target as HTMLSelectElement).value as Settings['selectionMode'])}
+                @change=${(e: Event) => this.emitSetting('selectionMode', (e.target as HTMLSelectElement).value as Settings['selectionMode'])}
               >
-                <option value="unread_only">Unread Only</option>
-                <option value="all">All Articles</option>
-                <option value="starred_only">Starred Only</option>
+                ${SELECTION_MODES.map((opt) => html`<option value=${opt.value}>${opt.label}</option>`)}
               </select>
             </div>
           </div>
@@ -119,7 +110,7 @@ export class GeneralSection extends LitElement {
                 <input
                   type="checkbox"
                   .checked=${this.settings.refreshOnStartup}
-                  @change=${(e: Event) => this.emitSettingChange('refreshOnStartup', (e.target as HTMLInputElement).checked)}
+                  @change=${(e: Event) => this.emitSetting('refreshOnStartup', (e.target as HTMLInputElement).checked)}
                 />
                 <span class="toggle-track"></span>
               </label>
@@ -136,7 +127,7 @@ export class GeneralSection extends LitElement {
                 <input
                   type="checkbox"
                   .checked=${this.settings.soundEffects}
-                  @change=${(e: Event) => this.emitSettingChange('soundEffects', (e.target as HTMLInputElement).checked)}
+                  @change=${(e: Event) => this.emitSetting('soundEffects', (e.target as HTMLInputElement).checked)}
                 />
                 <span class="toggle-track"></span>
               </label>
@@ -156,7 +147,7 @@ export class GeneralSection extends LitElement {
             <div class="pref-control">
               <select
                 .value=${this.settings.theme}
-                @change=${(e: Event) => this.emitSettingChange('theme', (e.target as HTMLSelectElement).value as Settings['theme'])}
+                @change=${(e: Event) => this.emitSetting('theme', (e.target as HTMLSelectElement).value as Settings['theme'])}
               >
                 <option value="system">System</option>
                 <option value="light">Light</option>

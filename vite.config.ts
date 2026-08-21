@@ -11,6 +11,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const firefoxManifest = isFirefox
   ? {
       ...manifest,
+      // Firefox MV3 has no background.service_worker; it uses an event page instead.
       background: {
         scripts: [manifest.background.service_worker],
         type: 'module',

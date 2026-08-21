@@ -1,6 +1,7 @@
 import { html, LitElement } from 'lit';
 import { customElement, property } from 'lit/decorators.js';
 import type { Settings } from '../../models';
+import { emitSettingChange, MAX_AGE_CHOICES } from '../../utils/ui';
 import { optionsStyles } from '../options.styles';
 
 @customElement('filters-section')
@@ -11,14 +12,8 @@ export class FiltersSection extends LitElement {
   @property({ type: Array }) availableTags: string[] = [];
   @property({ type: Boolean }) saving = false;
 
-  private emitSettingChange<K extends keyof Settings>(key: K, value: Settings[K]): void {
-    this.dispatchEvent(
-      new CustomEvent('setting-change', {
-        detail: { key, value },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+  private emitSetting(key: keyof Settings, value: unknown): void {
+    emitSettingChange(this, key, value as never);
   }
 
   private emitSave(): void {
@@ -28,13 +23,13 @@ export class FiltersSection extends LitElement {
   private toggleIncludeTag(tag: string): void {
     const current = this.settings.includeTags ?? [];
     const next = current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag];
-    this.emitSettingChange('includeTags', next);
+    this.emitSetting('includeTags', next);
   }
 
   private toggleExcludeTag(tag: string): void {
     const current = this.settings.excludeTags ?? [];
     const next = current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag];
-    this.emitSettingChange('excludeTags', next);
+    this.emitSetting('excludeTags', next);
   }
 
   render() {
@@ -59,15 +54,9 @@ export class FiltersSection extends LitElement {
             <div class="pref-control">
               <select
                 .value=${String(this.settings.maxAgeDays)}
-                @change=${(e: Event) => this.emitSettingChange('maxAgeDays', Number((e.target as HTMLSelectElement).value))}
+                @change=${(e: Event) => this.emitSetting('maxAgeDays', Number((e.target as HTMLSelectElement).value))}
               >
-                <option value="0">All time</option>
-                <option value="1">Past 24 hours</option>
-                <option value="3">Past 3 days</option>
-                <option value="7">Past 7 days</option>
-                <option value="14">Past 2 weeks</option>
-                <option value="30">Past 30 days</option>
-                <option value="90">Past 3 months</option>
+                ${MAX_AGE_CHOICES.map((opt) => html`<option value=${opt.value}>${opt.label}</option>`)}
               </select>
             </div>
           </div>
@@ -77,7 +66,7 @@ export class FiltersSection extends LitElement {
       <div class="card">
         <div class="card-header">
           <span class="card-title">Include Categories</span>
-          <span class="card-hint">Only roll from selected — leave empty for all</span>
+          <span class="card-hint">Only roll from selected; leave empty for all</span>
         </div>
         <div class="card-body">
           <div class="pref-row">
@@ -88,7 +77,7 @@ export class FiltersSection extends LitElement {
             <div class="pref-control">
               <select
                 .value=${this.settings.tagMatchMode}
-                @change=${(e: Event) => this.emitSettingChange('tagMatchMode', (e.target as HTMLSelectElement).value as Settings['tagMatchMode'])}
+                @change=${(e: Event) => this.emitSetting('tagMatchMode', (e.target as HTMLSelectElement).value as Settings['tagMatchMode'])}
               >
                 <option value="any">Any selected</option>
                 <option value="all">All selected</option>
@@ -106,7 +95,7 @@ export class FiltersSection extends LitElement {
                   }
                   ${
                     includeTags.length > 0
-                      ? html` <button class="clear-link" @click=${() => this.emitSettingChange('includeTags', [])}>Clear all</button>`
+                      ? html` <button class="clear-link" @click=${() => this.emitSetting('includeTags', [])}>Clear all</button>`
                       : ''
                   }
                 </div>
@@ -131,7 +120,7 @@ export class FiltersSection extends LitElement {
       <div class="card">
         <div class="card-header">
           <span class="card-title">Exclude Categories</span>
-          <span class="card-hint">Block selected — leave empty to block nothing</span>
+          <span class="card-hint">Block selected; leave empty to block nothing</span>
         </div>
         <div class="card-body">
           ${
@@ -141,7 +130,7 @@ export class FiltersSection extends LitElement {
                   Click a category to block it. Articles from sources in these categories will never be shown.
                   ${
                     excludeTags.length > 0
-                      ? html` <button class="clear-link" @click=${() => this.emitSettingChange('excludeTags', [])}>Clear all</button>`
+                      ? html` <button class="clear-link" @click=${() => this.emitSetting('excludeTags', [])}>Clear all</button>`
                       : ''
                   }
                 </div>

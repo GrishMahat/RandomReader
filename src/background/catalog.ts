@@ -1,23 +1,17 @@
 import BUNDLED_CATALOG from '../../catalog.json';
 import type { Catalog, Settings, Source } from '../models';
 import { CatalogSchema, DEFAULT_SETTINGS, SettingsSchema, STORAGE_KEYS } from '../models';
-import { fetchWithTimeout, getErrorMessage } from '../utils';
+import { fetchWithTimeout, getErrorMessage, isSnoozed } from '../utils';
+import { loadStore, saveStore, saveStoreMany } from './store';
 
 /** Remote (URL-fetched) catalog stored for the "remote" mode. */
 export async function getStoredCatalog(): Promise<Catalog | null> {
-  const result = (await chrome.storage.local.get([STORAGE_KEYS.CATALOG, STORAGE_KEYS.CATALOG_VERSION])) as Record<
-    string,
-    unknown
-  >;
-  const catalog = result[STORAGE_KEYS.CATALOG] as Catalog | undefined;
-  return catalog ?? null;
+  return loadStore(STORAGE_KEYS.CATALOG, CatalogSchema, null);
 }
 
 /** Catalog imported from a local file, used in "local" mode. */
 export async function getLocalCatalog(): Promise<Catalog | null> {
-  const result = (await chrome.storage.local.get(STORAGE_KEYS.LOCAL_CATALOG)) as Record<string, unknown>;
-  const catalog = result[STORAGE_KEYS.LOCAL_CATALOG] as Catalog | undefined;
-  return catalog ?? null;
+  return loadStore(STORAGE_KEYS.LOCAL_CATALOG, CatalogSchema, null);
 }
 
 /**
@@ -33,20 +27,15 @@ export async function getCatalog(): Promise<Catalog | null> {
   return getStoredCatalog();
 }
 
-export async function getCatalogVersion(): Promise<number> {
-  const result = (await chrome.storage.local.get(STORAGE_KEYS.CATALOG_VERSION)) as Record<string, unknown>;
-  return (result[STORAGE_KEYS.CATALOG_VERSION] as number) ?? 0;
-}
-
 export async function setCatalog(catalog: Catalog): Promise<void> {
-  await chrome.storage.local.set({
+  await saveStoreMany({
     [STORAGE_KEYS.CATALOG]: catalog,
     [STORAGE_KEYS.CATALOG_VERSION]: catalog.version,
   });
 }
 
 export async function setLocalCatalog(catalog: Catalog): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEYS.LOCAL_CATALOG]: catalog });
+  await saveStore(STORAGE_KEYS.LOCAL_CATALOG, catalog);
 }
 
 /** Persist a catalog to the storage key that matches the current mode. */
@@ -59,19 +48,44 @@ export async function setActiveCatalog(catalog: Catalog): Promise<void> {
   }
 }
 
+/**
+ * Record fetch outcomes for specific sources onto the active catalog,
+ * preserving everything else. This is the only way other modules should
+ * mutate per-source tracking data; nothing reaches into catalog internals.
+ */
+export async function markSourcesFetched(
+  updates: Map<string, { lastFetched?: number; errorCountDelta?: number; errorCount?: number }>,
+): Promise<void> {
+  if (updates.size === 0) return;
+
+  // Read fresh so concurrent mode switches aren't clobbered.
+  const catalog = await getCatalog();
+  if (!catalog) return;
+  let changed = false;
+  const sources = catalog.sources.map((source) => {
+    const u = updates.get(source.id);
+    if (!u) return source;
+    changed = true;
+    return {
+      ...source,
+      ...(u.lastFetched !== undefined ? { lastFetched: u.lastFetched } : {}),
+      errorCount: u.errorCount !== undefined ? u.errorCount : source.errorCount + (u.errorCountDelta ?? 0),
+    };
+  });
+  if (!changed) return;
+  await setActiveCatalog({ ...catalog, sources });
+}
+
 export async function getSettings(): Promise<Settings> {
-  const result = (await chrome.storage.local.get(STORAGE_KEYS.SETTINGS)) as Record<string, unknown>;
-  const stored = result[STORAGE_KEYS.SETTINGS] as Partial<Settings> | undefined;
-  // Use Zod parse so any missing or undefined fields always get schema defaults.
-  // This prevents crashes when old storage data lacks new fields (e.g. includeTags undefined).
-  const parsed = SettingsSchema.safeParse({ ...DEFAULT_SETTINGS, ...stored });
-  return parsed.success ? parsed.data : { ...DEFAULT_SETTINGS };
+  // Zod fills schema defaults for any missing field, so old storage data
+  // lacking new keys parses cleanly instead of crashing callers.
+  return loadStore(STORAGE_KEYS.SETTINGS, SettingsSchema, DEFAULT_SETTINGS);
 }
 
 export async function setSettings(settings: Partial<Settings>): Promise<Settings> {
   const current = await getSettings();
   const updated = { ...current, ...settings };
-  await chrome.storage.local.set({ [STORAGE_KEYS.SETTINGS]: updated });
+  await saveStore(STORAGE_KEYS.SETTINGS, updated);
   return updated;
 }
 
@@ -85,7 +99,7 @@ export async function patchSettings(settings: Partial<Settings>): Promise<{ sett
   const updated = { ...current, ...settings };
   const changed = (Object.keys(settings) as (keyof Settings)[]).some((k) => current[k] !== updated[k]);
   if (changed) {
-    await chrome.storage.local.set({ [STORAGE_KEYS.SETTINGS]: updated });
+    await saveStore(STORAGE_KEYS.SETTINGS, updated);
   }
   return { settings: updated, changed };
 }
@@ -137,7 +151,7 @@ export async function importCatalogFromJson(
 /**
  * Apply a remote catalog update, preserving the user's `enabled` toggles,
  * `lastFetched`, and `errorCount` for sources that already exist locally.
- * New sources (higher version) are added with their own enabled state.
+ * New sources are added with their own enabled state.
  */
 function mergeCatalogWithToggles(remote: Catalog, local: Catalog | null): Catalog {
   if (!local) return remote;
@@ -175,75 +189,45 @@ function getBundledCatalog(): Catalog | null {
   return parsed.data;
 }
 
-export async function refreshCatalog(): Promise<Catalog | null> {
+/**
+ * The single catalog update path: fetch → merge with user toggles → persist.
+ *
+ * No version gate: the merge already preserves every per-source user choice
+ * (enabled, snooze, lastFetched), and startup refresh used to run ungated
+ * while the alarm path gated on `remote.version > storedVersion`. That split
+ * meant a version reset silently stranded users whose stored version was
+ * higher than the remote one. One path, one policy.
+ *
+ * Returns null only when nothing could be fetched and nothing was stored.
+ */
+export async function refreshCatalog(): Promise<{ catalog: Catalog | null; fetched: boolean }> {
   const settings = await getSettings();
 
-  // In local mode never touch the remote catalog — the imported file is the source of truth.
-  if (settings.catalogMode === 'local') {
-    return getCatalog();
-  }
-
-  if (!settings.catalogUrl) {
-    return getCatalog();
+  // In local mode never touch the remote catalog; the imported file is the source of truth.
+  if (settings.catalogMode === 'local' || !settings.catalogUrl) {
+    return { catalog: await getCatalog(), fetched: false };
   }
 
   const remote = await fetchAndValidateCatalog(settings.catalogUrl);
   if (!remote) {
     // Fall back to whatever is already stored, then to the bundled catalog.
     const stored = await getCatalog();
-    if (stored) return stored;
+    if (stored) return { catalog: stored, fetched: false };
     const bundled = getBundledCatalog();
     if (bundled) {
       await setCatalog(bundled);
-      return bundled;
+      return { catalog: bundled, fetched: false };
     }
-    return null;
+    return { catalog: null, fetched: false };
   }
 
   const local = await getStoredCatalog();
   const merged = mergeCatalogWithToggles(remote, local);
   await setCatalog(merged);
-  return merged;
-}
-
-/**
- * Version-aware catalog update: only fetch and apply when the remote catalog is
- * newer than the stored one. Keeps the user's enabled/disabled source toggles,
- * lastFetched, and errorCount.
- */
-export async function updateCatalogIfNewer(): Promise<{ updated: boolean; catalog: Catalog | null }> {
-  const settings = await getSettings();
-
-  if (settings.catalogMode === 'local') {
-    return { updated: false, catalog: await getCatalog() };
-  }
-
-  if (!settings.catalogUrl) {
-    return { updated: false, catalog: await getCatalog() };
-  }
-
-  const storedVersion = await getCatalogVersion();
-  const remote = await fetchAndValidateCatalog(settings.catalogUrl);
-  if (!remote) {
-    return { updated: false, catalog: await getCatalog() };
-  }
-
-  if (remote.version <= storedVersion) {
-    return { updated: false, catalog: await getCatalog() };
-  }
-
-  const local = await getStoredCatalog();
-  const merged = mergeCatalogWithToggles(remote, local);
-  await setCatalog(merged);
-  return { updated: true, catalog: merged };
-}
-
-/** True when the source is snoozed — `snoozedUntil` set and still in the future. */
-export function isSourceSnoozed(source: Source): boolean {
-  return typeof source.snoozedUntil === 'number' && source.snoozedUntil > Date.now();
+  return { catalog: merged, fetched: true };
 }
 
 export function getEnabledSources(catalog: Catalog | null): Source[] {
   if (!catalog) return [];
-  return catalog.sources.filter((s) => s.enabled && !isSourceSnoozed(s));
+  return catalog.sources.filter((s) => s.enabled && !isSnoozed(s));
 }

@@ -83,19 +83,25 @@ export const HistoryEntrySchema = z.object({
 
 export type HistoryEntry = z.infer<typeof HistoryEntrySchema>;
 
-/**
- * Minimal fields persisted for starred articles. Storing the full Article
- * in both the pool and the starred map would double storage for those items;
- * the remaining fields can be hydrated from the pool on read.
- */
-export interface StarredEntry {
-  id: string;
-  url: string;
-  title: string;
-  sourceId: string;
-}
+export const StarredEntrySchema = z.object({
+  id: z.string(),
+  url: z.string(),
+  title: z.string(),
+  sourceId: z.string(),
+});
+
+export type StarredEntry = z.infer<typeof StarredEntrySchema>;
+
+export const StarredMapSchema = z.record(z.string(), StarredEntrySchema);
 
 export type StarredMap = Record<string, StarredEntry>;
+
+/** Compact catalog summary shipped over the message pipe instead of full catalogs. */
+export interface CatalogSummary {
+  version: number;
+  updatedAt: string;
+  sourceCount: number;
+}
 
 /** Derived from SettingsSchema so Zod defaults and this object are always in sync. */
 export const DEFAULT_SETTINGS: Settings = SettingsSchema.parse({});
@@ -136,3 +142,117 @@ export type ExtensionMessage =
   | { type: 'GET_HISTORY' }
   | { type: 'CLEAR_HISTORY' }
   | { type: 'CLEAR_DATA' };
+
+/** History entry as viewed by the UI (read flag added). */
+export type HistoryView = HistoryEntry & { read: boolean };
+
+export interface SettingsResult {
+  success: boolean;
+  settings?: Settings;
+  error?: string;
+}
+
+export interface SourcesResult {
+  success: boolean;
+  sources?: Source[];
+  error?: string;
+}
+
+export interface RandomArticleResult {
+  success: boolean;
+  article?: Article;
+  error?: string;
+}
+
+export interface OpenRandomResult {
+  success: boolean;
+  article?: Article;
+  streak?: number;
+  odds?: number;
+  sourceName?: string;
+  error?: string;
+}
+
+export interface RefreshFeedsResult {
+  success: boolean;
+  fetched?: number;
+  added?: number;
+  error?: string;
+}
+
+export interface RefreshCatalogResult {
+  success: boolean;
+  catalog?: Catalog | null;
+  error?: string;
+}
+
+export interface ImportCatalogResult {
+  success: boolean;
+  catalog?: Catalog;
+  error?: string;
+}
+
+export interface CatalogInfoResult {
+  success: boolean;
+  mode?: Settings['catalogMode'];
+  catalogUrl?: string;
+  local?: CatalogSummary | null;
+  remote?: CatalogSummary | null;
+  blockedDomains?: string[];
+  error?: string;
+}
+
+export interface BlockedDomainsResult {
+  success: boolean;
+  blockedDomains?: string[];
+  error?: string;
+}
+
+export interface StarredResult {
+  success: boolean;
+  starred?: boolean;
+  error?: string;
+}
+
+export interface ArticlesResult {
+  success: boolean;
+  articles?: Article[];
+  error?: string;
+}
+
+export interface HistoryResult {
+  success: boolean;
+  history?: HistoryView[];
+  error?: string;
+}
+
+export interface OkResult {
+  success: boolean;
+  error?: string;
+}
+
+/**
+ * The response half of the message pipe: every request type maps to exactly
+ * one response interface. Callers get checked payloads from `sendMessage`,
+ * and the background handler registry narrows automatically via this map.
+ */
+export interface MessageResponses {
+  GET_RANDOM: RandomArticleResult;
+  OPEN_RANDOM: OpenRandomResult;
+  REFRESH_FEEDS: RefreshFeedsResult;
+  REFRESH_CATALOG: RefreshCatalogResult;
+  IMPORT_CATALOG: ImportCatalogResult;
+  GET_CATALOG_INFO: CatalogInfoResult;
+  UPDATE_BLOCKED_DOMAINS: BlockedDomainsResult;
+  GET_SETTINGS: SettingsResult;
+  SET_SETTINGS: SettingsResult;
+  PATCH_SETTINGS: SettingsResult;
+  GET_SOURCES: SourcesResult;
+  TOGGLE_SOURCE: SourcesResult;
+  SNOOZE_SOURCE: SourcesResult;
+  TOGGLE_STAR: StarredResult;
+  GET_ARTICLES: ArticlesResult;
+  GET_HISTORY: HistoryResult;
+  CLEAR_HISTORY: OkResult;
+  CLEAR_DATA: OkResult;
+}

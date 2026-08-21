@@ -1,6 +1,7 @@
 import { html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { InterestGroup } from '../../config/interests';
+import { iconCheck } from '../../utils/icons';
 import { optionsStyles } from '../options.styles';
 
 @customElement('onboarding-screen')
@@ -58,13 +59,13 @@ export class OnboardingScreen extends LitElement {
                         <button class="interest-chip ${active ? 'selected' : ''}" @click=${() => this.toggleInterest(group.label)}>
                           <span class="interest-icon">${group.icon}</span>
                           <span class="interest-label">${group.label}</span>
-                          ${active ? html`<span class="interest-check">✓</span>` : ''}
+                          ${active ? html`<span class="interest-check">${iconCheck}</span>` : ''}
                         </button>
                       `;
                     })}
                   </div>
                 `
-                : html`<div class="empty-state">No catalog loaded yet. Feeds are refreshing — you can pick interests after sources are ready.</div>`
+                : html`<div class="empty-state">No catalog loaded yet. Feeds are refreshing, so you can pick interests after sources are ready.</div>`
             }
           </div>
 

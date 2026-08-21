@@ -1,12 +1,14 @@
 import { html, LitElement, type PropertyValues } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
+import { iconDownload, iconRefresh, iconTrash } from '../../utils/icons';
+import { formatTimestamp } from '../../utils/ui';
 import { optionsStyles } from '../options.styles';
 
 export interface HistoryItem {
   id: string;
   title: string;
   url: string;
-  fetchedAt: number;
+  openedAt: number;
   sourceId: string;
   sourceName?: string;
   author?: string;
@@ -37,8 +39,7 @@ export class HistorySection extends LitElement {
   }
 
   private formatDate(ts: number): string {
-    if (!ts) return '';
-    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    return formatTimestamp(ts, { year: true });
   }
 
   private emitRefreshHistory(): void {
@@ -77,7 +78,7 @@ export class HistorySection extends LitElement {
             }}
           />
           <button class="btn btn-secondary" @click=${this.emitRefreshHistory} title="Reload history">
-            Refresh
+            <span class="icon">${iconRefresh}</span> Refresh
           </button>
           <button
             class="btn btn-secondary"
@@ -85,7 +86,7 @@ export class HistorySection extends LitElement {
             title="Download history as CSV"
             ?disabled=${this.history.length === 0}
           >
-            Export CSV
+            <span class="icon">${iconDownload}</span> Export CSV
           </button>
           <button
             class="btn btn-secondary"
@@ -93,10 +94,10 @@ export class HistorySection extends LitElement {
             title="Download history as JSON"
             ?disabled=${this.history.length === 0}
           >
-            Export JSON
+            <span class="icon">${iconDownload}</span> Export JSON
           </button>
           <button class="btn btn-secondary btn-danger" @click=${this.emitClearHistory} title="Clear reading history">
-            Clear History
+            <span class="icon">${iconTrash}</span> Clear History
           </button>
         </div>
 
@@ -125,7 +126,7 @@ export class HistorySection extends LitElement {
                           </td>
                           <td class="cell-nowrap text-secondary">${item.sourceName || '—'}</td>
                           <td class="cell-nowrap text-secondary">${item.author || '—'}</td>
-                          <td class="cell-nowrap text-muted">${this.formatDate(item.fetchedAt)}</td>
+                          <td class="cell-nowrap text-muted">${this.formatDate(item.openedAt)}</td>
                         </tr>
                       `,
                     )}

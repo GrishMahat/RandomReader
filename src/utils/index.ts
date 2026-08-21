@@ -22,16 +22,13 @@ export function getErrorMessage(error: unknown): string {
   return 'Unknown error';
 }
 
-export function debounce<T extends (...args: unknown[]) => unknown>(fn: T, ms: number): T {
-  let timeoutId: ReturnType<typeof setTimeout>;
-  return ((...args: unknown[]) => {
-    clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn(...args), ms);
-  }) as T;
-}
+/** One day in milliseconds. The only definition; import this everywhere. */
+export const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
+/** True when the source is snoozed: `snoozedUntil` is set and still in the future.
+ *  Shared by the background pool builder and both UI surfaces. */
+export function isSnoozed(source: { snoozedUntil?: number }): boolean {
+  return typeof source.snoozedUntil === 'number' && source.snoozedUntil > Date.now();
 }
 
 /** High-entropy 128-bit hash of a string, hex-encoded. Eliminates collision risk

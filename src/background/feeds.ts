@@ -1,9 +1,10 @@
-import type { Article, Catalog, Settings, Source } from '../models';
-import { STORAGE_KEYS } from '../models';
+import { z } from 'zod';
+import type { Article, Catalog, HistoryEntry, Settings, Source, StarredMap } from '../models';
+import { ArticleSchema, HistoryEntrySchema, STORAGE_KEYS, StarredMapSchema } from '../models';
 import { parseFeed } from '../providers';
-import { extractPageTitle, fetchWithTimeout, getErrorMessage, hostnameOf, normalizeDomain } from '../utils';
-import { getCatalog, getEnabledSources, getSettings, setActiveCatalog } from './catalog';
-import { addReadHistory, getReadHistory, getStarredMap, setStarred as setStarredInStore } from './storage';
+import { DAY_MS, extractPageTitle, fetchWithTimeout, getErrorMessage, hostnameOf, normalizeDomain } from '../utils';
+import { getCatalog, getEnabledSources, getSettings, markSourcesFetched } from './catalog';
+import { loadStore, saveStore, saveStoreMany, updateStore } from './store';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -21,21 +22,42 @@ const TITLE_CACHE_MAX = 5_000;
 const POOL_CAP_BYTES = 7 * 1024 * 1024;
 /** How many recent source IDs to remember for diversity weighting. */
 const ROLL_HISTORY_LENGTH = 10;
+/** Timeout for resolving a real page title. */
+const TITLE_TIMEOUT_MS = 10_000;
+/** Timeout for fetching one source's feed(s). */
+const FEED_TIMEOUT_MS = 15_000;
+/** Max entries kept in reading history. */
+const HISTORY_CAP = 200;
 
 export { BATCH_SIZE_ALARM, BATCH_SIZE_STARTUP };
+
+// ─── Schemas for store reads ─────────────────────────────────────────────────
+
+const ArticlesSchema = z.array(ArticleSchema);
+const TitleCacheSchema = z.record(z.string(), z.string());
+const RollHistorySchema = z.array(z.string());
+const RollStatsSchema = z.object({ streak: z.number() });
+const HistoryListSchema = z.array(HistoryEntrySchema);
 
 // ─── Article pool ─────────────────────────────────────────────────────────────
 
 export async function getArticles(): Promise<Article[]> {
-  const result = (await chrome.storage.local.get(STORAGE_KEYS.ARTICLES)) as Record<string, unknown>;
-  return (result[STORAGE_KEYS.ARTICLES] as Article[]) || [];
+  return loadStore(STORAGE_KEYS.ARTICLES, ArticlesSchema, []);
 }
 
-async function setArticles(articles: Article[]): Promise<void> {
-  await chrome.storage.local.set({ [STORAGE_KEYS.ARTICLES]: articles });
+async function patchArticle(id: string, patch: Partial<Article>): Promise<void> {
+  await updateStore(STORAGE_KEYS.ARTICLES, ArticlesSchema, [], (articles) => {
+    const idx = articles.findIndex((a) => a.id === id);
+    if (idx < 0) return articles;
+    const next = [...articles];
+    next[idx] = { ...next[idx], ...patch };
+    return next;
+  });
 }
 
 function deduplicateArticles(articles: Article[]): Article[] {
+  // Key on id AND a trailing-slash-insensitive URL so the same article reached
+  // through a redirect or a different id scheme still collapses to one entry.
   const seenId = new Set<string>();
   const seenUrl = new Set<string>();
   return articles.filter((article) => {
@@ -53,8 +75,7 @@ let inMemoryTitleCache: Record<string, string> | null = null;
 
 async function getTitleCache(): Promise<Record<string, string>> {
   if (inMemoryTitleCache !== null) return inMemoryTitleCache;
-  const result = (await chrome.storage.local.get(STORAGE_KEYS.TITLE_CACHE)) as Record<string, unknown>;
-  inMemoryTitleCache = (result[STORAGE_KEYS.TITLE_CACHE] as Record<string, string>) || {};
+  inMemoryTitleCache = await loadStore(STORAGE_KEYS.TITLE_CACHE, TitleCacheSchema, {});
   return inMemoryTitleCache;
 }
 
@@ -65,12 +86,11 @@ async function cacheTitle(id: string, title: string): Promise<void> {
   if (ids.length > TITLE_CACHE_MAX) {
     for (const k of ids.slice(0, ids.length - TITLE_CACHE_MAX)) delete cache[k];
   }
-  await chrome.storage.local.set({ [STORAGE_KEYS.TITLE_CACHE]: cache });
+  await saveStore(STORAGE_KEYS.TITLE_CACHE, cache);
 }
 
-/** Fetch a real <title> for generic sitemap entries and persist it (cache + pool).
- *  Accepts optional existingArticles array to avoid redundant storage reads. */
-export async function resolveArticleTitle(article: Article, existingArticles?: Article[]): Promise<Article> {
+/** Fetch a real <title> for generic sitemap entries and persist it (cache + pool). */
+export async function resolveArticleTitle(article: Article): Promise<Article> {
   if (article.title !== 'Sitemap Entry') return article;
 
   const cache = await getTitleCache();
@@ -78,7 +98,7 @@ export async function resolveArticleTitle(article: Article, existingArticles?: A
   if (cached) return { ...article, title: cached };
 
   try {
-    const response = await fetchWithTimeout(article.url, { timeout: 10000 });
+    const response = await fetchWithTimeout(article.url, { timeout: TITLE_TIMEOUT_MS });
     if (!response.ok) return article;
     const html = await response.text();
     const title = extractPageTitle(html);
@@ -86,12 +106,9 @@ export async function resolveArticleTitle(article: Article, existingArticles?: A
 
     await cacheTitle(article.id, title);
 
-    const articles = existingArticles ?? (await getArticles());
-    const idx = articles.findIndex((a) => a.id === article.id);
-    if (idx >= 0) {
-      articles[idx] = { ...articles[idx], title };
-      await setArticles(articles);
-    }
+    // Patch only this article through the store's read-modify-write primitive
+    // so we never write back a stale snapshot of the whole pool.
+    await patchArticle(article.id, { title });
     return { ...article, title };
   } catch (error) {
     console.error(`Failed to resolve title for ${article.url}:`, getErrorMessage(error));
@@ -136,7 +153,7 @@ function enforcePoolCap(articles: Article[]): Article[] {
 export async function fetchSource(source: Source): Promise<Article[]> {
   const urls = [...new Set([source.url, ...(source.feeds ?? [])])];
   try {
-    const results = await Promise.allSettled(urls.map((url) => fetchWithTimeout(url, { timeout: 15000 })));
+    const results = await Promise.allSettled(urls.map((url) => fetchWithTimeout(url, { timeout: FEED_TIMEOUT_MS })));
     const okTexts: string[] = [];
 
     for (let i = 0; i < results.length; i++) {
@@ -186,7 +203,6 @@ function filterArticles(
 
   // Age filtering: per-source maxAgeDays overrides the global setting. When a
   // source has no override, the global setting applies; 0 disables the filter.
-  const DAY_MS = 24 * 60 * 60 * 1000;
   const sourceMaxAge = new Map<string, number>();
   for (const source of catalog?.sources ?? []) {
     if (typeof source.maxAgeDays === 'number') sourceMaxAge.set(source.id, source.maxAgeDays);
@@ -261,11 +277,10 @@ function filterArticles(
   return result;
 }
 
-// ─── Source diversity & roll tracking ─────────────────────────────────────────
+// ─── Roll tracking ─────────────────────────────────────────────────────────────
 
 export async function getRollHistory(): Promise<string[]> {
-  const result = (await chrome.storage.local.get(STORAGE_KEYS.ROLL_HISTORY)) as Record<string, unknown>;
-  return (result[STORAGE_KEYS.ROLL_HISTORY] as string[]) || [];
+  return loadStore(STORAGE_KEYS.ROLL_HISTORY, RollHistorySchema, []);
 }
 
 export interface RollStats {
@@ -274,17 +289,20 @@ export interface RollStats {
 }
 
 /** Record a rolled source and return the consecutive same-source streak.
- *  The previous source is derived from rollHistory[0] — the redundant
- *  `lastSourceId` field in rollStats is never written (old values are ignored). */
+ *  The previous source is derived from rollHistory[0]. The legacy
+ *  `lastSourceId` field is never written or read.
+ *
+ *  Stats and history are written in ONE chrome.storage call so a crash
+ *  between them can never leave streak and history inconsistent. */
 export async function recordRoll(sourceId: string): Promise<RollStats> {
-  const history = await getRollHistory();
+  const [history, stats] = await Promise.all([
+    getRollHistory(),
+    loadStore(STORAGE_KEYS.ROLL_STATS, RollStatsSchema, { streak: 1 }),
+  ]);
   const previousSourceId = history[0] ?? null;
-
-  const result = (await chrome.storage.local.get(STORAGE_KEYS.ROLL_STATS)) as Record<string, unknown>;
-  const stats = result[STORAGE_KEYS.ROLL_STATS] as { streak?: number } | undefined;
-  const streak = previousSourceId === sourceId ? (stats?.streak ?? 1) + 1 : 1;
-  await chrome.storage.local.set({ [STORAGE_KEYS.ROLL_STATS]: { streak } });
-  await chrome.storage.local.set({
+  const streak = previousSourceId === sourceId ? (stats.streak || 1) + 1 : 1;
+  await saveStoreMany({
+    [STORAGE_KEYS.ROLL_STATS]: { streak },
     [STORAGE_KEYS.ROLL_HISTORY]: [sourceId, ...history].slice(0, ROLL_HISTORY_LENGTH),
   });
   return { streak, previousSourceId };
@@ -292,8 +310,8 @@ export async function recordRoll(sourceId: string): Promise<RollStats> {
 
 /**
  * Diversity weighting: sources rolled recently get a lower weight so rolls
- * spread across the catalog "when possible", but repeats still happen — which
- * is what powers the lucky-streak feature.
+ * spread across the catalog when possible, but repeats still happen.
+ * That residual repeat chance is what powers the lucky-streak feature.
  */
 function sourceWeight(sourceId: string, history: string[]): number {
   const count = history.filter((id) => id === sourceId).length;
@@ -336,11 +354,10 @@ export async function refreshRandomBatch(size = BATCH_SIZE_ALARM): Promise<Batch
   const sorted = [...enabled].sort((a, b) => (a.lastFetched ?? 0) - (b.lastFetched ?? 0));
   const batch = sorted.slice(0, size);
 
-  const existing = await getArticles();
-  const newArticles: Article[] = [];
   let fetched = 0;
+  const newArticles: Article[] = [];
   const now = Date.now();
-  const byId = new Map(catalog.sources.map((s) => [s.id, s]));
+  const sourceUpdates = new Map<string, { lastFetched?: number; errorCountDelta?: number; errorCount?: number }>();
 
   for (let i = 0; i < batch.length; i += BATCH_CONCURRENCY) {
     const chunk = batch.slice(i, i + BATCH_CONCURRENCY);
@@ -348,26 +365,30 @@ export async function refreshRandomBatch(size = BATCH_SIZE_ALARM): Promise<Batch
     for (let j = 0; j < chunk.length; j++) {
       const source = chunk[j];
       const articles = results[j];
-      const current = byId.get(source.id);
       if (articles.length > 0) {
         fetched++;
         newArticles.push(...articles);
-        if (current) byId.set(source.id, { ...current, lastFetched: now, errorCount: 0 });
-      } else if (current) {
-        byId.set(source.id, { ...current, errorCount: (current.errorCount ?? 0) + 1 });
+        sourceUpdates.set(source.id, { lastFetched: now, errorCount: 0 });
+      } else {
+        sourceUpdates.set(source.id, { errorCountDelta: 1 });
       }
     }
   }
 
-  await setActiveCatalog({ ...catalog, sources: [...byId.values()] });
+  // Go through the catalog module's dedicated seam instead of reaching into
+  // its storage keys directly.
+  await markSourcesFetched(sourceUpdates);
 
   if (newArticles.length > 0) {
-    const combined = [...existing, ...newArticles];
-    const deduped = deduplicateArticles(combined);
-    const capped = enforcePoolCap(deduped);
-    const existingIds = new Set(existing.map((a) => a.id));
-    const added = capped.filter((a) => !existingIds.has(a.id)).length;
-    await setArticles(capped);
+    // Read the pool FRESH after fetching (the fetch loop takes seconds and
+    // users can starve/read articles meanwhile); existing entries win the
+    // dedupe so their read/starred flags are never clobbered by re-fetches.
+    const fresh = await getArticles();
+    const combined = deduplicateArticles([...fresh, ...newArticles]);
+    const capped = enforcePoolCap(combined);
+    const freshIds = new Set(fresh.map((a) => a.id));
+    const added = capped.filter((a) => !freshIds.has(a.id)).length;
+    await saveStore(STORAGE_KEYS.ARTICLES, capped);
     return { fetched, added };
   }
 
@@ -377,10 +398,13 @@ export async function refreshRandomBatch(size = BATCH_SIZE_ALARM): Promise<Batch
 // ─── Random selection ─────────────────────────────────────────────────────────
 
 /**
- * Live, on-demand random article: pick a random enabled source, fetch just its
- * feed, and return a random matching article. Retries up to a handful of random
- * sources when a feed fails or yields nothing that passes the filters, so a
- * stale or empty pool never blocks a fresh result.
+ * Live, on-demand random article: pick a weighted-random enabled source, fetch
+ * just its feed, and return a matching article. Retries up to a handful of
+ * random sources when a feed fails or yields nothing that passes the filters,
+ * so a stale or empty pool never blocks a fresh result.
+ *
+ * Uses the same diversity weighting as pooled rolls so live picks don't
+ * hammer recently-seen sources.
  */
 export async function fetchRandomArticles(settings: Settings): Promise<Article | null> {
   const catalog = await getCatalog();
@@ -389,7 +413,7 @@ export async function fetchRandomArticles(settings: Settings): Promise<Article |
 
   const starredMap = await getStarredMap();
   const readHistory = await getReadHistory();
-  const readIds = new Set(readHistory.map((h: { id: string }) => h.id));
+  const readIds = new Set(readHistory.map((h) => h.id));
   const history = await getRollHistory();
   const tried = new Set<string>();
 
@@ -414,7 +438,8 @@ export async function fetchRandomArticles(settings: Settings): Promise<Article |
     const filtered = filterArticles(candidates, settings, catalog, blockedDomains);
     if (filtered.length === 0) continue;
 
-    const picked = filtered[Math.floor(Math.random() * filtered.length)];
+    const picked = pickWeighted(filtered, (a) => sourceWeight(a.sourceId, history));
+    if (!picked) continue;
     return resolveArticleTitle(picked);
   }
 
@@ -438,9 +463,7 @@ export async function getRandomArticle(settings?: Settings): Promise<Article | n
       const filtered = filterArticles(flagged, opts, catalog, blockedDomains);
       if (filtered.length > 0) {
         const picked = pickWeighted(filtered, (a) => sourceWeight(a.sourceId, history));
-        // Pass the already-loaded pool so resolveArticleTitle can patch titles in
-        // place without a second chrome.storage read.
-        if (picked) return resolveArticleTitle(picked, articles);
+        if (picked) return resolveArticleTitle(picked);
       }
     }
   }
@@ -450,13 +473,41 @@ export async function getRandomArticle(settings?: Settings): Promise<Article | n
 
 // ─── Read & starred state ─────────────────────────────────────────────────────
 
+export async function getReadHistory(): Promise<HistoryEntry[]> {
+  return loadStore(STORAGE_KEYS.READ_HISTORY, HistoryListSchema, []);
+}
+
+export async function addReadHistory(entry: HistoryEntry): Promise<void> {
+  await updateStore(STORAGE_KEYS.READ_HISTORY, HistoryListSchema, [], (history) =>
+    [entry, ...history.filter((h) => h.id !== entry.id)].slice(0, HISTORY_CAP),
+  );
+}
+
+export async function getStarredMap(): Promise<StarredMap> {
+  return loadStore(STORAGE_KEYS.STARRED, StarredMapSchema, {});
+}
+
+async function setStarredInStore(article: Article, starred: boolean): Promise<void> {
+  await updateStore(STORAGE_KEYS.STARRED, StarredMapSchema, {}, (map) => {
+    if (!starred) {
+      const next = { ...map };
+      delete next[article.id];
+      return next;
+    }
+    return {
+      ...map,
+      [article.id]: {
+        id: article.id,
+        url: article.url,
+        title: article.title,
+        sourceId: article.sourceId,
+      },
+    };
+  });
+}
+
 export async function markArticleRead(article: Article): Promise<void> {
-  const articles = await getArticles();
-  const idx = articles.findIndex((a) => a.id === article.id);
-  if (idx >= 0) {
-    articles[idx] = { ...articles[idx], read: true };
-    await setArticles(articles);
-  }
+  await patchArticle(article.id, { read: true });
 
   const catalog = await getCatalog();
   const source = catalog?.sources.find((s) => s.id === article.sourceId);
@@ -476,8 +527,7 @@ export async function toggleStarred(article: Article, starred?: boolean): Promis
   const idx = articles.findIndex((a) => a.id === article.id);
   const next = starred ?? (idx >= 0 ? !articles[idx].starred : true);
   if (idx >= 0) {
-    articles[idx] = { ...articles[idx], starred: next };
-    await setArticles(articles);
+    await patchArticle(article.id, { starred: next });
   }
   await setStarredInStore(article, next);
   return next;
@@ -485,9 +535,9 @@ export async function toggleStarred(article: Article, starred?: boolean): Promis
 
 // ─── Cleanup ──────────────────────────────────────────────────────────────────
 
-export async function clearOldArticles(maxAge: number = 90 * 24 * 60 * 60 * 1000): Promise<void> {
-  const articles = await getArticles();
-  const cutoff = Date.now() - maxAge;
-  const filtered = articles.filter((a) => a.fetchedAt > cutoff || a.starred);
-  await setArticles(filtered);
+export async function clearOldArticles(maxAgeDays = 90): Promise<void> {
+  const cutoff = Date.now() - maxAgeDays * DAY_MS;
+  await updateStore(STORAGE_KEYS.ARTICLES, ArticlesSchema, [], (articles) =>
+    articles.filter((a) => a.fetchedAt > cutoff || a.starred),
+  );
 }

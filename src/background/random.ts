@@ -1,15 +1,8 @@
-import type { Article, Settings } from '../models';
+import type { OpenRandomResult, RandomArticleResult, Settings } from '../models';
 import { getCatalog } from './catalog';
 import { getRandomArticle, markArticleRead, recordRoll } from './feeds';
 
-export async function handleOpenRandom(settings: Settings): Promise<{
-  success: boolean;
-  article?: Article;
-  streak?: number;
-  odds?: number;
-  sourceName?: string;
-  error?: string;
-}> {
+export async function handleOpenRandom(settings: Settings): Promise<OpenRandomResult> {
   const article = await getRandomArticle(settings);
   if (!article) {
     return {
@@ -23,6 +16,9 @@ export async function handleOpenRandom(settings: Settings): Promise<{
   const roll = await recordRoll(article.sourceId);
   const enabledCount = Math.max((catalog?.sources ?? []).filter((s) => s.enabled).length, 1);
   const streak = roll.streak;
+  // Display-only odds: hitting the same source N times in a row is roughly a
+  // 1-in-enabledCount^(N-1) chance if every source were equally likely. The
+  // diversity weighting makes true odds better than this, so treat it as flavor.
   const odds = streak > 1 ? Math.round(enabledCount ** (streak - 1)) : 1;
 
   try {
@@ -43,9 +39,7 @@ export async function handleOpenRandom(settings: Settings): Promise<{
   }
 }
 
-export async function handleGetRandom(
-  settings: Settings,
-): Promise<{ success: boolean; article?: Article; error?: string }> {
+export async function handleGetRandom(settings: Settings): Promise<RandomArticleResult> {
   const article = await getRandomArticle(settings);
   if (!article) {
     return { success: false, error: 'No articles available' };

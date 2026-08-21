@@ -18,7 +18,6 @@ export const INTEREST_GROUPS: InterestGroup[] = [
       'google',
       'apple',
       'android',
-      'browsers',
       'microsoft',
       'windows',
       'linux',

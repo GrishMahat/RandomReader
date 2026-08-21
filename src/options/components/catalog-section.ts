@@ -1,6 +1,8 @@
 import { html, LitElement } from 'lit';
 import { customElement, property, state } from 'lit/decorators.js';
 import type { Settings } from '../../models';
+import { iconUpload, iconX } from '../../utils/icons';
+import { emitSettingChange, formatTimestamp } from '../../utils/ui';
 import { optionsStyles } from '../options.styles';
 
 export interface LocalCatalogInfo {
@@ -20,14 +22,8 @@ export class CatalogSection extends LitElement {
   @state() private dragover = false;
   @state() private newBlockedDomain = '';
 
-  private emitSettingChange<K extends keyof Settings>(key: K, value: Settings[K]): void {
-    this.dispatchEvent(
-      new CustomEvent('setting-change', {
-        detail: { key, value },
-        bubbles: true,
-        composed: true,
-      }),
-    );
+  private emitSetting(key: keyof Settings, value: unknown): void {
+    emitSettingChange(this, key, value as never);
   }
 
   private emitCatalogModeChange(useLocal: boolean): void {
@@ -101,8 +97,7 @@ export class CatalogSection extends LitElement {
   }
 
   private formatDate(ts: number): string {
-    if (!ts) return '';
-    return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    return formatTimestamp(ts, { year: true });
   }
 
   render() {
@@ -146,7 +141,7 @@ export class CatalogSection extends LitElement {
               : useLocal
                 ? html`
                 <div class="pref-row pref-row-borderless">
-                  <div class="help-text text-danger">No local catalog imported yet — importing a file below enables it automatically.</div>
+                  <div class="help-text text-danger">No local catalog imported yet. Importing a file below enables it automatically.</div>
                 </div>
               `
                 : ''
@@ -169,6 +164,7 @@ export class CatalogSection extends LitElement {
             @drop=${this.handleDrop}
             @click=${() => (this.shadowRoot?.querySelector('input[type="file"]') as HTMLInputElement | null)?.click()}
           >
+            <div class="dz-icon"><span class="icon">${iconUpload}</span></div>
             <div class="dz-title">Drop catalog.json here, or click to upload</div>
             <div class="dz-sub">Accepts JSON catalogs with sources and tags</div>
             <input type="file" accept=".json,application/json" @change=${this.handleFileChange} />
@@ -204,7 +200,7 @@ export class CatalogSection extends LitElement {
                     (domain) => html`
                       <span class="tag-chip blocked-domain-chip">
                         ${domain}
-                        <button class="chip-remove" @click=${() => this.emitRemoveBlockedDomain(domain)} title="Remove">×</button>
+                        <button class="chip-remove" @click=${() => this.emitRemoveBlockedDomain(domain)} title="Remove" aria-label=${`Remove ${domain}`}><span class="icon">${iconX}</span></button>
                       </span>
                     `,
                   )}
@@ -225,7 +221,7 @@ export class CatalogSection extends LitElement {
               id="catalogUrl"
               .value=${this.settings.catalogUrl}
               ?disabled=${useLocal}
-              @input=${(e: Event) => this.emitSettingChange('catalogUrl', (e.target as HTMLInputElement).value)}
+              @input=${(e: Event) => this.emitSetting('catalogUrl', (e.target as HTMLInputElement).value)}
               placeholder="https://raw.githubusercontent.com/.../catalog.json"
             />
             <div class="help-text">Used when the local catalog toggle is off. Changes to the online catalog are applied on the next check, preserving your source toggles.</div>
