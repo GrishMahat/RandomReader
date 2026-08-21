@@ -28,9 +28,9 @@ The extension stores the following data **locally in your browser** using Chrome
 ## Network Requests
 
 The extension makes network requests **only** to:
-1. **RSS/Atom feed URLs** defined in the source catalog (e.g., `https://example.com/feed.xml`) — to fetch article lists
-2. **Sitemap URLs** defined in the source catalog — to resolve article titles
-3. **Optional remote catalog URL** (default: GitHub raw URL) — to check for catalog updates every 6 hours
+1. **RSS/Atom feed URLs** defined in the source catalog (e.g., `https://example.com/feed.xml`), to fetch article lists
+2. **Sitemap URLs** defined in the source catalog, to resolve article titles
+3. **Optional remote catalog URL** (default: GitHub raw URL), to check for catalog updates every 6 hours
 
 All requests are initiated by the background worker on your behalf. No cookies, auth tokens, or user identifiers are sent.
 
@@ -58,7 +58,7 @@ Updates will be posted here with a new "Last updated" date. Continued use after 
 
 ## Contact
 
-Questions: [GitHub Issues](https://github.com/GrishMahat/RandomReader/issues) or email the developer.
+Questions: [GitHub Issues](https://github.com/GrishMahat/RandomReader/issues)
 
 ---
 

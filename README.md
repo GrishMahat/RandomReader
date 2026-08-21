@@ -1,25 +1,25 @@
 # RandomReader
 
-> Can't decide what to read? This extension is for you. Just click **Surprise Me** and go to a random blog or article — no scrolling, no doom-scrolling, no overthinking. Just chance.
+> Can't decide what to read? Click **Surprise Me** and land on a random article from a curated catalog. No scrolling, no feed, no overthinking. Just chance.
 
-A clean, distraction-free browser extension that opens random articles from curated feeds. Click **Surprise Me** and let chance decide what you read next.
+A distraction-free browser extension that opens random articles from curated feeds.
 
 ![GitHub License](https://img.shields.io/github/license/GrishMahat/RandomReader)
 
-> **Note:** The UI is intentionally minimal — the point is getting you to an article fast. If something looks off, it's a bug; file an [issue](https://github.com/GrishMahat/RandomReader/issues).
+> **Note:** The UI is intentionally minimal because the point is getting you to an article fast. If something looks off, it's a bug; file an [issue](https://github.com/GrishMahat/RandomReader/issues).
 
 ## Features
 
-- 🎲 **Surprise Me** — opens a random article from your enabled sources in a new tab (or the current one)
-- ⌨️ **Keyboard shortcut** — press `Ctrl+.` (macOS: `Cmd+.`) to open a random article without opening the popup. Remap it anytime under `chrome://extensions/shortcuts`
-- ⏸️ **Snooze sources** — hide a source from rolls for a day, a week, or a month without removing it, from the Sources page
-- ⏱️ **Per-source max age** — override the global article-age filter for individual sources
-- 🏷️ **Tag-based filtering** — include/exclude categories (e.g. `technology`, `web`, `security`) to narrow the pool
-- 🔍 **Smart filtering** — selection pool (unread / all / starred), max article age, and keyword include/exclude
-- 🕓 **Reading history** — every article opened via Surprise Me is tracked
-- 📦 **Online catalog** — the source list ships from a public gist by default, with an auto-update mechanism (checked every 6 hours) so everyone gets the latest curated sources. Import your own `catalog.json` (file picker / drag-and-drop) or point to your own URL to take control.
-- ⚡ **Background refresh** — feeds fetched automatically on a configurable interval (30 min → 30 days), no storage caps
-- 🎨 **Clean UI** — gray accent theme with a wide, rounded popup
+- **Surprise Me** opens a random article from your enabled sources in a new tab (or the current one)
+- **Keyboard shortcut** (`Ctrl+.`, macOS `Cmd+.`) rolls without opening the popup; remap it under `chrome://extensions/shortcuts`
+- **Snooze sources** hides a source from rolls for a day, a week, or a month without removing it
+- **Per-source max age** overrides the global article-age filter for individual sources
+- **Tag filtering** includes or excludes categories (`technology`, `web`, `security`, ...) to narrow the pool
+- **Selection pool** picks from unread only, everything, or starred articles; keyword include/exclude filters by title
+- **Reading history** tracks every article opened via Surprise Me, exportable as CSV/JSON
+- **Online catalog** ships from this repo via GitHub raw and is checked every 6 hours, preserving your source toggles on update. Import your own `catalog.json` (file picker or drag-and-drop) or point at your own URL.
+- **Background refresh** fetches feeds automatically on a configurable interval (30 minutes to 24 hours). The stored pool is capped at 7 MB; oldest unstarred articles drop first.
+- **Light and dark themes** with an accent color that stays out of the way
 
 ## Tech Stack
 
@@ -72,7 +72,7 @@ Outputs to `dist/firefox/` with a `browser_specific_settings.gecko` manifest and
 3. Select `dist/firefox/manifest.json` (Firefox wants the `manifest.json` file, not the folder)
 4. The extension stays loaded until Firefox restarts
 
-For a permanent install, zip the **contents** of `dist/firefox/` (so `manifest.json` is at the zip root) and upload to [Firefox Add-ons](https://addons.mozilla.org/) (free, no developer fee) — Firefox blocks unsigned permanent add-ons.
+For a permanent install, zip the **contents** of `dist/firefox/` (so `manifest.json` is at the zip root) and upload to [Firefox Add-ons](https://addons.mozilla.org/) (free, no developer fee), since Firefox blocks unsigned permanent add-ons.
 
 ### Load in Chrome (unpacked)
 
@@ -99,15 +99,15 @@ Runs the Vite dev server with CRXJS hot-reload.
 | Setting | Options | Default |
 | --- | --- | --- |
 | Open Articles In | `new_tab` / `current_tab` | `new_tab` |
-| Feed Refresh Interval | 30 min → 30 days | 24 hours |
+| Feed Refresh Interval | 30 minutes to 24 hours | 24 hours |
 | Selection Pool | Unread Only / All / Starred Only | Unread Only |
-| Max Article Age | All time → 3 months | All time |
+| Max Article Age | All time up to 3 months | All time |
 | Include / Exclude Categories | any catalog tag | none |
-| Keywords | include / exclude by title & summary | none |
+| Keywords | include / exclude by title | none |
 
 ### Catalog
 
-Sources live in `catalog.json` (repo root) and are served from the repo itself (`https://raw.githubusercontent.com/GrishMahat/RandomReader/refs/heads/main/catalog.json`) as the default remote `catalogUrl` — so every user shares the same curated list. Each source has:
+Sources live in `catalog.json` (repo root) and are served from the repo itself (`https://raw.githubusercontent.com/GrishMahat/RandomReader/refs/heads/main/catalog.json`) as the default remote `catalogUrl`, so every user shares the same curated list. Each source has:
 
 ```json
 {
@@ -121,12 +121,12 @@ Sources live in `catalog.json` (repo root) and are served from the repo itself (
 }
 ```
 
-- **`type`** — the feed format: `rss`, `atom`, or `sitemap`.
-- **`include`** / **`exclude`** (optional) — path-prefix filters on the article URL.
+- **`type`** is the feed format: `rss`, `atom`, or `sitemap`.
+- **`include`** / **`exclude`** (optional) are path-prefix filters applied to the article URL.
 
-`include`/`exclude` are mainly useful for **`sitemap`** sources, which list every URL on a site — including landing and category pages — so path filters keep only the real articles (e.g. `"/about/news/"` keeps news posts, `"/archive/"` drops archive pages).
+`include`/`exclude` matter mainly for **`sitemap`** sources, which list every URL on a site, landing and category pages included. Path filters keep only the real articles (for example `"/about/news/"` keeps news posts while `"/archive/"` drops archive pages).
 
-RSS and Atom feeds generally link straight to an article, so they usually need no filtering. Add `exclude` only if a feed's links redirect to the blog homepage or a wrong page instead of the article:
+RSS and Atom feeds generally link straight to an article, so they usually need no filtering. Add `exclude` only if a feed's links redirect to the blog homepage or some other wrong page:
 
 ```json
 {
@@ -140,9 +140,9 @@ RSS and Atom feeds generally link straight to an article, so they usually need n
 }
 ```
 
-The bundled catalog ships with 70+ verified sources across tech, web, security, science, and maker niches.
+The bundled catalog ships with 130+ verified sources across tech, web, security, science, and maker niches.
 
-You can import your own catalog via the **Catalog** section in Options (drag-and-drop a `.json` file) or set a remote `catalogUrl` and sync. By default the extension checks the online catalog every 6 hours and auto-applies updates (guarded by the catalog `version` field), preserving your enabled/disabled source toggles.
+You can import your own catalog via the **Catalog** section in Options (drag-and-drop a `.json` file) or set a remote `catalogUrl` and sync. The extension checks the online catalog every 6 hours and applies updates, keeping your enabled/disabled source toggles, snoozes, and blocked domains intact.
 
 ## Scripts
 
@@ -158,21 +158,23 @@ You can import your own catalog via the **Catalog** section in Options (drag-and
 ## Project Structure
 
 ```
-catalog.json          # Source catalog (published to the gist used as default online catalog)
+catalog.json          # Source catalog (served via GitHub raw as the default online catalog)
 manifest.config.ts    # Shared extension manifest (CRXJS)
 vite.config.ts        # Vite/CRXJS build config, per-browser manifest, release zips
 biome.json            # Linter & formatter config
 src/
-├── background/       # Service worker: message router, feed refresh, alarms
-│   ├── main.ts       # Message handlers (GET_SOURCES, OPEN_RANDOM, GET_HISTORY, ...)
-│   ├── feeds.ts      # Fetch, parse, store articles; random selection
-│   ├── random.ts     # Open-a-random-article logic
-│   ├── catalog.ts    # Catalog load/import/validate
-│   └── storage.ts    # History & starred storage helpers
+├── background/       # Service worker
+│   ├── main.ts       # Alarm scheduling + message handler registry
+│   ├── feeds.ts      # Pool CRUD, roll tracking, batch refresh, random selection
+│   ├── random.ts     # Open-a-random-article flow (tab handling, streaks)
+│   ├── catalog.ts    # Catalog load/import/validate/update
+│   └── store.ts      # Single typed seam over chrome.storage.local
+├── providers/        # RSS / Atom / sitemap parsers
+├── models/           # Zod schemas, message types, response map
+├── utils/            # Messaging, icons, theme, shared settings vocabulary
+├── config/           # Interest groups for onboarding
 ├── popup/            # Popup UI (Lit)
 ├── options/          # Options page (Lit)
-├── providers/        # RSS / Atom / sitemap parsers
-├── models/           # Zod schemas & types
 └── icons/            # Extension icons & logo
 ```
 
