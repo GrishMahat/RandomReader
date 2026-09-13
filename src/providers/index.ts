@@ -64,11 +64,20 @@ function getXmlObjectValue(obj: XmlObject | undefined, key: string): unknown {
   return obj ? obj[key] : undefined;
 }
 
-/** Return the first non-null value among keys, stringified. */
+/** Return the first non-null value among keys, stringified.
+ *  Nodes with attributes (e.g. `<title type="html">…</title>`) parse to
+ *  objects, so unwrap their `#text` instead of stringifying the object
+ *  (which would yield "[object Object]"). */
 function getText(item: XmlObject, ...keys: string[]): string | undefined {
   for (const key of keys) {
     const val = item[key];
-    if (val != null) return String(val);
+    if (val == null) continue;
+    if (typeof val === 'object') {
+      const text = (val as XmlObject)['#text'];
+      if (typeof text === 'string') return text;
+      continue;
+    }
+    return String(val);
   }
   return undefined;
 }
@@ -208,8 +217,8 @@ export function parseSitemap(source: Source, xml: string): Article[] {
   }));
 }
 
-export function parseFeed(source: Source, xml: string): Article[] {
-  switch (source.type) {
+function parseByType(type: Source['type'], source: Source, xml: string): Article[] {
+  switch (type) {
     case 'rss':
       return parseRSS(source, xml);
     case 'atom':
@@ -219,4 +228,23 @@ export function parseFeed(source: Source, xml: string): Article[] {
     default:
       return [];
   }
+}
+
+export function parseFeed(source: Source, xml: string): Article[] {
+  const primary = parseByType(source.type, source, xml);
+  if (primary.length > 0) return primary;
+
+  // Format drift: the site migrated RSS <-> Atom (or to/from a sitemap)
+  // without the catalog's `type` being updated. Try the other parsers
+  // before giving up so a stale `type` degrades instead of silently
+  // zeroing the source.
+  const fallbacks: Source['type'][] = (['rss', 'atom', 'sitemap'] as const).filter((t) => t !== source.type);
+  for (const type of fallbacks) {
+    const parsed = parseByType(type, source, xml);
+    if (parsed.length > 0) {
+      console.warn(`[${source.id}] declared type "${source.type}" yielded nothing; parsed as "${type}" instead`);
+      return parsed;
+    }
+  }
+  return [];
 }

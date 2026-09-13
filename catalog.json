@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-08-21",
+  "updatedAt": "2026-09-13",
   "blockedDomains": [],
   "sources": [
     {
@@ -394,8 +394,14 @@
     {
       "id": "zdnet",
       "name": "ZDNet",
-      "type": "rss",
-      "url": "https://www.zdnet.com/news/rss.xml",
+      "type": "atom",
+      "url": "https://www.zdnet.com/rss/news/",
+      "feeds": [
+        "https://www.zdnet.com/rss/artificial-intelligence/",
+        "https://www.zdnet.com/rss/apple/",
+        "https://www.zdnet.com/rss/linux/",
+        "https://www.zdnet.com/rss/security/"
+      ],
       "language": "en",
       "enabled": true,
       "tags": [

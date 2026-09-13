@@ -276,6 +276,16 @@ export class RandomReaderPopup extends LitElement {
                   </select>
                 </div>
                 <div class="opt-card">
+                  <span class="opt-label" title="Favor unfamiliar topics, new sources, and wildcards">Explorer Mode</span>
+                  <input
+                    class="opt-check"
+                    type="checkbox"
+                    .checked=${this.settings.explorerMode}
+                    @change=${(e: Event) => this.updateSetting('explorerMode', (e.target as HTMLInputElement).checked)}
+                    aria-label="Explorer Mode"
+                  />
+                </div>
+                <div class="opt-card">
                   <span class="opt-label">Open Target</span>
                   <select
                     class="opt-select"

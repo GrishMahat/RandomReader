@@ -4,6 +4,16 @@ import { ArticleSchema, HistoryEntrySchema, STORAGE_KEYS, StarredMapSchema } fro
 import { parseFeed } from '../providers';
 import { DAY_MS, extractPageTitle, fetchWithTimeout, getErrorMessage, hostnameOf, normalizeDomain } from '../utils';
 import { getCatalog, getEnabledSources, getSettings, markSourcesFetched } from './catalog';
+import { deduplicateArticles } from './dedup';
+import type { ScoringContext } from './scoring';
+import {
+  MAX_SOURCE_COUNTS,
+  makeScoringContext,
+  pickScored,
+  pickWeighted,
+  presetFor,
+  sourceDiversityWeight,
+} from './scoring';
 import { loadStore, saveStore, saveStoreMany, updateStore } from './store';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -44,7 +54,10 @@ export { BATCH_SIZE_ALARM, BATCH_SIZE_STARTUP };
 const ArticlesSchema = z.array(ArticleSchema);
 const TitleCacheSchema = z.record(z.string(), z.string());
 const RollHistorySchema = z.array(z.string());
-const RollStatsSchema = z.object({ streak: z.number() });
+const RollStatsSchema = z.object({
+  streak: z.number(),
+  sourceCounts: z.record(z.string(), z.number()).default({}),
+});
 const HistoryListSchema = z.array(HistoryEntrySchema);
 
 // ─── Article pool ─────────────────────────────────────────────────────────────
@@ -60,20 +73,6 @@ async function patchArticle(id: string, patch: Partial<Article>): Promise<void> 
     const next = [...articles];
     next[idx] = { ...next[idx], ...patch };
     return next;
-  });
-}
-
-function deduplicateArticles(articles: Article[]): Article[] {
-  // Key on id AND a trailing-slash-insensitive URL so the same article reached
-  // through a redirect or a different id scheme still collapses to one entry.
-  const seenId = new Set<string>();
-  const seenUrl = new Set<string>();
-  return articles.filter((article) => {
-    const normUrl = article.url.toLowerCase().replace(/\/+$/, '');
-    if (seenId.has(article.id) || seenUrl.has(normUrl)) return false;
-    seenId.add(article.id);
-    seenUrl.add(normUrl);
-    return true;
   });
 }
 
@@ -198,10 +197,11 @@ function normalizeBlockedDomains(domains: string[]): string[] {
 
 /**
  * Pure filter over an article list, mirroring the user's selection settings.
+ * Exported for unit tests; callers pass pre-normalized blocked domains.
  * `selectionMode: 'unread_only'` only filters out already-read items when the
  * caller provides read flags; on-demand fetches treat fresh items as unread.
  */
-function filterArticles(
+export function filterArticles(
   articles: Article[],
   settings: Settings,
   catalog: Catalog | null,
@@ -296,6 +296,21 @@ export interface RollStats {
   previousSourceId: string | null;
 }
 
+/** All-time roll counts per source (the serendipity long window). Old
+ *  installs without the field fall back to empty via the schema default. */
+async function getRollStats(): Promise<{ streak: number; sourceCounts: Record<string, number> }> {
+  return loadStore(STORAGE_KEYS.ROLL_STATS, RollStatsSchema, { streak: 1, sourceCounts: {} });
+}
+
+/** Drop the least-rolled sources when the map somehow outgrows the catalog
+ *  by an order of magnitude; ~140 ids in practice, so this never triggers. */
+function pruneSourceCounts(counts: Record<string, number>): Record<string, number> {
+  const entries = Object.entries(counts);
+  if (entries.length <= MAX_SOURCE_COUNTS) return counts;
+  entries.sort((a, b) => a[1] - b[1]);
+  return Object.fromEntries(entries.slice(entries.length - MAX_SOURCE_COUNTS));
+}
+
 /** Record a rolled source and return the consecutive same-source streak.
  *  The previous source is derived from rollHistory[0]. The legacy
  *  `lastSourceId` field is never written or read.
@@ -303,40 +318,18 @@ export interface RollStats {
  *  Stats and history are written in ONE chrome.storage call so a crash
  *  between them can never leave streak and history inconsistent. */
 export async function recordRoll(sourceId: string): Promise<RollStats> {
-  const [history, stats] = await Promise.all([
-    getRollHistory(),
-    loadStore(STORAGE_KEYS.ROLL_STATS, RollStatsSchema, { streak: 1 }),
-  ]);
+  const [history, stats] = await Promise.all([getRollHistory(), getRollStats()]);
   const previousSourceId = history[0] ?? null;
   const streak = previousSourceId === sourceId ? (stats.streak || 1) + 1 : 1;
+  const sourceCounts = pruneSourceCounts({
+    ...stats.sourceCounts,
+    [sourceId]: (stats.sourceCounts[sourceId] ?? 0) + 1,
+  });
   await saveStoreMany({
-    [STORAGE_KEYS.ROLL_STATS]: { streak },
+    [STORAGE_KEYS.ROLL_STATS]: { streak, sourceCounts },
     [STORAGE_KEYS.ROLL_HISTORY]: [sourceId, ...history].slice(0, ROLL_HISTORY_LENGTH),
   });
   return { streak, previousSourceId };
-}
-
-/**
- * Diversity weighting: sources rolled recently get a lower weight so rolls
- * spread across the catalog when possible, but repeats still happen.
- * That residual repeat chance is what powers the lucky-streak feature.
- */
-function sourceWeight(sourceId: string, history: string[]): number {
-  const count = history.filter((id) => id === sourceId).length;
-  return 1 / (1 + count * 2);
-}
-
-function pickWeighted<T>(items: T[], weight: (item: T) => number): T | null {
-  if (items.length === 0) return null;
-  const weights = items.map(weight);
-  const total = weights.reduce((a, b) => a + b, 0);
-  if (total <= 0) return items[Math.floor(Math.random() * items.length)];
-  let r = Math.random() * total;
-  for (let i = 0; i < items.length; i++) {
-    r -= weights[i];
-    if (r <= 0) return items[i];
-  }
-  return items[items.length - 1];
 }
 
 // ─── Batch refresh ────────────────────────────────────────────────────────────
@@ -551,7 +544,7 @@ export async function fetchDeepRandomArticle(settings: Settings): Promise<Articl
   for (let attempt = 0; attempt < DEEP_MAX_ATTEMPTS && tried.size < sources.length; attempt++) {
     const remaining = sources.filter((s) => !tried.has(s.id));
     if (remaining.length === 0) break;
-    const source = pickWeighted(remaining, (s) => sourceWeight(s.id, history));
+    const source = pickWeighted(remaining, (s) => sourceDiversityWeight(s.id, history));
     if (!source) break;
     tried.add(source.id);
 
@@ -564,17 +557,42 @@ export async function fetchDeepRandomArticle(settings: Settings): Promise<Articl
       starred: Boolean(starredMap[a.id]),
     }));
     const filtered = filterArticles(candidates, settings, catalog, blockedDomains);
-    if (filtered.length === 0) continue;
-
-    const picked = pickWeighted(filtered, (a) => sourceWeight(a.sourceId, history));
-    if (!picked) continue;
-    return resolveArticleTitle(picked);
+    const found = await pickScoredArticle(filtered, catalog, history, settings.explorerMode);
+    if (!found) continue;
+    return found;
   }
 
   return null;
 }
 
 // ─── Random selection ─────────────────────────────────────────────────────────
+
+/**
+ * Shared article-selection tail for all three pick paths (pooled, on-demand,
+ * deep): assemble the scoring context from stores, run the mixture-model
+ * pick, resolve sitemap titles. Returns null for an empty filtered list.
+ */
+async function pickScoredArticle(
+  filtered: Article[],
+  catalog: Catalog | null,
+  rollHistory: string[],
+  explorerMode: boolean,
+): Promise<Article | null> {
+  if (filtered.length === 0) return null;
+  const [readHistory, starredMap, stats] = await Promise.all([getReadHistory(), getStarredMap(), getRollStats()]);
+  const tagBySource: Record<string, string[]> = {};
+  for (const source of catalog?.sources ?? []) tagBySource[source.id] = source.tags ?? [];
+  const ctx: ScoringContext = makeScoringContext({
+    tagBySource,
+    recentSourceIds: rollHistory,
+    sourceCounts: stats.sourceCounts,
+    reads: readHistory,
+    stars: Object.values(starredMap),
+  });
+  const pick = pickScored(filtered, ctx, Math.random, presetFor(explorerMode));
+  if (!pick) return null;
+  return resolveArticleTitle(pick.article);
+}
 
 /**
  * Live, on-demand random article: pick a weighted-random enabled source, fetch
@@ -602,7 +620,7 @@ export async function fetchRandomArticles(settings: Settings): Promise<Article |
   for (let attempt = 0; attempt < MAX_ON_DEMAND_ATTEMPTS && tried.size < sources.length; attempt++) {
     const remaining = sources.filter((s) => !tried.has(s.id));
     if (remaining.length === 0) break;
-    const source = pickWeighted(remaining, (s) => sourceWeight(s.id, history));
+    const source = pickWeighted(remaining, (s) => sourceDiversityWeight(s.id, history));
     if (!source) break;
     tried.add(source.id);
 
@@ -615,11 +633,9 @@ export async function fetchRandomArticles(settings: Settings): Promise<Article |
       starred: Boolean(starredMap[a.id]),
     }));
     const filtered = filterArticles(candidates, settings, catalog, blockedDomains);
-    if (filtered.length === 0) continue;
-
-    const picked = pickWeighted(filtered, (a) => sourceWeight(a.sourceId, history));
-    if (!picked) continue;
-    return resolveArticleTitle(picked);
+    const found = await pickScoredArticle(filtered, catalog, history, settings.explorerMode);
+    if (!found) continue;
+    return found;
   }
 
   return null;
@@ -648,10 +664,8 @@ export async function getRandomArticle(settings?: Settings): Promise<Article | n
       // Pre-normalize blocked domains once.
       const blockedDomains = normalizeBlockedDomains(catalog?.blockedDomains ?? []);
       const filtered = filterArticles(flagged, opts, catalog, blockedDomains);
-      if (filtered.length > 0) {
-        const picked = pickWeighted(filtered, (a) => sourceWeight(a.sourceId, history));
-        if (picked) return resolveArticleTitle(picked);
-      }
+      const found = await pickScoredArticle(filtered, catalog, history, opts.explorerMode);
+      if (found) return found;
     }
   }
 

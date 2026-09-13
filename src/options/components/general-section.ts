@@ -118,6 +118,23 @@ export class GeneralSection extends LitElement {
 
           <div class="pref-row">
             <div>
+              <div class="pref-label">Explorer Mode</div>
+              <div class="pref-desc">Tilt rolls toward unfamiliar topics, new sources, and wildcards. Your filters always still apply</div>
+            </div>
+            <div class="pref-control">
+              <label class="toggle-label">
+                <input
+                  type="checkbox"
+                  .checked=${this.settings.explorerMode}
+                  @change=${(e: Event) => this.emitSetting('explorerMode', (e.target as HTMLInputElement).checked)}
+                />
+                <span class="toggle-track"></span>
+              </label>
+            </div>
+          </div>
+
+          <div class="pref-row">
+            <div>
               <div class="pref-label">Refresh on Startup</div>
               <div class="pref-desc">Fetch a batch of feeds when the browser starts</div>
             </div>

@@ -16,6 +16,7 @@ A distraction-free browser extension that opens random articles from curated fee
 - **Per-source max age** overrides the global article-age filter for individual sources
 - **Tag filtering** includes or excludes categories (`technology`, `web`, `security`, ...) to narrow the pool
 - **Selection pool** picks from unread only, everything, or starred articles; keyword include/exclude filters by title
+- **Explorer mode** tilts rolls toward unfamiliar topics, new sources, and wildcards instead of the balanced mix (filters always still apply)
 - **Reading history** tracks every article opened via Surprise Me, exportable as CSV/JSON
 - **Online catalog** ships from this repo via GitHub raw and is checked every 6 hours, preserving your source toggles on update. Import your own `catalog.json` (file picker or drag-and-drop) or point at your own URL.
 - **Background refresh** fetches feeds automatically on a configurable interval (30 minutes to 24 hours). The stored pool is capped at 7 MB; oldest unstarred articles drop first.
@@ -102,6 +103,7 @@ Runs the Vite dev server with CRXJS hot-reload.
 | Feed Refresh Interval | 30 minutes to 24 hours | 24 hours |
 | Selection Pool | Unread Only / All / Starred Only | Unread Only |
 | Article Discovery | Recent posts / Deep archive | Recent posts |
+| Explorer Mode | off / on | off |
 | Max Article Age | All time up to 3 months | All time |
 | Include / Exclude Categories | any catalog tag | none |
 | Keywords | include / exclude by title | none |
@@ -156,6 +158,10 @@ You can import your own catalog via the **Catalog** section in Options (drag-and
 | `pnpm preview` | Preview the build |
 | `pnpm lint` | Type-check (`tsc --noEmit`) + Biome lint/format check |
 | `pnpm format` | Apply Biome formatting to the whole codebase |
+| `pnpm test` | Run the Vitest suite once (`vitest run`) |
+| `pnpm test:coverage` | Same, with a V8 coverage report (`coverage/`, gitignored) |
+
+A pre-commit hook (`.githooks/pre-commit`) runs `pnpm lint` automatically. It's enabled on `pnpm install` via the `prepare` script; to enable it in an existing checkout, run `git config core.hooksPath .githooks` once.
 
 ## Project Structure
 

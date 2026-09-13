@@ -320,6 +320,14 @@ export const popupStyles = css`
     outline-offset: 1px;
   }
 
+  .opt-check {
+    width: 16px;
+    height: 16px;
+    margin: 0 4px;
+    accent-color: var(--accent, #0f766e);
+    cursor: pointer;
+  }
+
   /* History tab */
   .history-list {
     list-style: none;

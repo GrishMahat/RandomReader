@@ -71,6 +71,12 @@ export const SettingsSchema = z.object({
    * falling back to recent behavior everywhere else.
    */
   discoveryMode: z.enum(['recent', 'deep']).default('recent'),
+  /**
+   * What rolls favor: false keeps the balanced 40/30/20/10 lane mix, true
+   * switches to the explorer preset (unfamiliar topics, new sources, more
+   * wildcards). Hard filters are never relaxed by this flag.
+   */
+  explorerMode: z.boolean().default(false),
   maxAgeDays: z.number().default(0),
   keywordsInclude: z.array(z.string()).default([]),
   keywordsExclude: z.array(z.string()).default([]),

@@ -31,8 +31,8 @@ export function isSnoozed(source: { snoozedUntil?: number }): boolean {
   return typeof source.snoozedUntil === 'number' && source.snoozedUntil > Date.now();
 }
 
-/** High-entropy 128-bit hash of a string, hex-encoded. Eliminates collision risk
- *  for article URLs across large catalogs. */
+/** 128-bit non-cryptographic hash of a string, hex-encoded. Collision risk is
+ *  low for article-URL volumes, but this is not a cryptographic hash. */
 export function hashString(input: string): string {
   let h1 = 0x811c9dc5;
   let h2 = 0x5bd1e995;

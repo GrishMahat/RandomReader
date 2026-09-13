@@ -2,6 +2,23 @@
 
 All notable changes to Random Reader are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/) and this project uses [Semantic Versioning](https://semver.org/).
 
+## Unreleased
+
+### Added
+- **Discovery scoring engine**: new pure module `src/background/scoring.ts` replaces single-factor source weighting at all three pick sites (pooled, on-demand, deep). Every pick is now a mixture model: roll a lane from a fixed 40/30/20/10 mix (familiar / unfamiliar / timeless / wild), then weighted-pick *within* the lane — scores are weights, never an argmax, so the anti-bubble proportions hold structurally and low-scoring articles can always win.
+- **Five scoring factors**: exponential freshness decay (3-day half-life, replacing the binary age cliff at pick time), short-window source avoidance (previous formula preserved exactly, so lucky-streak dynamics don't change), short-window topic avoidance over catalog tags, history affinity (reads 1x, stars 3x, plus starred-title token overlap), and an unseen bonus for never-rolled sources and never-seen tags.
+- **All-time source memory**: roll stats now persist per-source counts alongside the streak, feeding the unseen bonus. Old installs fall back to empty counts, and the map is pruned past 1000 entries.
+- **First test suite**: Vitest (`pnpm test`) covering lane classification and boundaries (including the 21-day timeless split and unfamiliar-over-timeless precedence), mix enforcement and empty-lane redistribution, weights-not-argmax, factor orderings, and roll-stat persistence behind an in-memory `chrome.storage.local` mock.
+- **Deduplication v2**: new pure module `src/background/dedup.ts` replaces the lowercase-and-trailing-slash URL check everywhere. Four passes with first-occurrence-wins (pool flags still survive re-fetches): exact id, canonical URL (scheme dropped so http/https merge, www/mobile hosts stripped, non-default ports preserved, fragments dropped, `utm_*`/click-id/AMP params removed, survivors sorted), normalized-title exact match for cross-outlet syndication (diacritics folded; the shared "Sitemap Entry" placeholder and short generic headlines are excluded), and bucketed fuzzy title matching (token overlap ≥ 0.85, long titles only, at most the 64 most recent bucket members scanned per candidate so full-pool refreshes stay linear — "Pro" vs "Pro Max" siblings stay separate). Boundary tests pin the 16-character title floor, the 32-character fuzzy floor, and the fact that fuzzy chains don't merge transitively through dropped articles.
+- **Parser and catalog tests**: RSS/Atom fixtures pinning field extraction, homepage-link filtering, cross-format fallback in both directions, sitemap include/exclude filters, and catalog JSON validation.
+- **Feed format resilience**: `parseFeed` now tries the other feed formats when the declared `type` parses nothing (logging the drift) instead of silently returning zero articles, so a site migrating RSS→Atom degrades instead of going dark.
+- **Enforced lint gate**: committed `.githooks/pre-commit` runs `pnpm lint` (auto-enabled on `pnpm install`).
+- **Test suite sweep**: 157 tests across seven files under `tests/` (mirroring `src/`, with a shared `chrome.storage.local` mock helper) plus `pnpm test:coverage` (V8). A setup file silences the expected console noise from deliberately-triggered failure paths so real failures stand out. Covers the fetch→parse→dedupe pipeline, catalog refresh/merge/fallback paths, pool capping, deep-archive probing and depth learning, roll-stat persistence, and every pure util — 98% statements / 99% lines, excluding Lit UI and MV3 wiring (alarms, tabs, listeners), which need a browser env.
+- **Explorer mode**: a new `explorerMode` setting (popup General tab + Options → General, off by default) switches discovery to a bolder preset — unfamiliar lane raised to 40%, wildcards doubled to 20%, topic/unseen weights up, freshness/history down. Hard filters are never relaxed by the flag; "Why this?" explanations were deliberately cut from this release.
+
+### Fixed
+- **Attributed feed titles rendered as "[object Object]"**: nodes like `<title type="html">` stringified the whole parsed object; the text is now unwrapped instead.
+
 ## v0.2.0 - 2026-08-21
 
 ### Added

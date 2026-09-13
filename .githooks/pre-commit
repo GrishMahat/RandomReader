@@ -1,0 +1,6 @@
+#!/bin/sh
+# Pre-commit hook: type-check + lint (tsc + Biome) before each commit.
+# Enabled via `git config core.hooksPath .githooks`
+# (set automatically on `pnpm install` through the `prepare` script).
+set -e
+pnpm lint

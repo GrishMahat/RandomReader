@@ -164,12 +164,12 @@ for (const r of results) {
     changed++;
   }
   console.log(
-    `${(r.source.id + ' ').padEnd(22)} ${String(before).padStart(6)} -> ${String(r.depth).padStart(6)}  (${r.requests} req, ${r.note})`,
+    `${(`${r.source.id} `).padEnd(22)} ${String(before).padStart(6)} -> ${String(r.depth).padStart(6)}  (${r.requests} req, ${r.note})`,
   );
 }
 
 if (changed > 0) {
   catalog.updatedAt = new Date().toISOString().slice(0, 10);
-  writeFileSync(CATALOG, JSON.stringify(catalog, null, 2) + '\n');
+  writeFileSync(CATALOG, `${JSON.stringify(catalog, null, 2)}\n`);
 }
 console.log(`\n${changed} maxPages updated in catalog.json`);

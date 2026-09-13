@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/dist", "!**/release", "!**/catalog.json"]
+    "includes": ["**", "!**/dist", "!**/release", "!**/catalog.json", "!**/coverage"]
   },
   "formatter": {
     "enabled": true,
